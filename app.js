@@ -62,6 +62,7 @@ const cancelEditBtn = document.getElementById('cancelEditBtn');
 
 // Initialize the application
 function init() {
+    loadPlayersFromStorage();
     renderMemberList();
     setupEventListeners();
     loadSavedPositions();
@@ -69,7 +70,6 @@ function init() {
     initializeCanvas();
     setupClickOutsideHandler();
     setupPlayerManagementHandlers();
-    loadPlayersFromStorage();
 }
 
 // Load map image if exists
@@ -2296,12 +2296,15 @@ function loadPlayersFromStorage() {
             const loadedMembers = JSON.parse(saved);
             if (Array.isArray(loadedMembers) && loadedMembers.length > 0) {
                 members = loadedMembers;
-                renderMemberList();
-                updateCounts();
             }
         } catch (e) {
             console.error('Error loading players:', e);
+            // If there's an error, save the default data
+            savePlayersToStorage();
         }
+    } else {
+        // No saved data, save the default data from data.js
+        savePlayersToStorage();
     }
 }
 
