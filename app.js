@@ -3,12 +3,13 @@ let placedMembers = [];
 let placedGroups = []; // Store group placements
 let placedObjectives = []; // Store objective markers
 let placedBosses = []; // Store boss markers
+let placedTowers = []; // Store tower markers
 let placedEnemies = []; // Store enemy markers
 let filteredMembers = [...members];
 let currentFilter = 'all';
 let currentRoleFilter = 'all';
 let currentView = 'grouped'; // 'grouped' or 'list'
-let placingMode = null; // 'objective' or 'boss' or null
+let placingMode = null; // 'objective' or 'boss' or 'tower' or null
 let drawingMode = false;
 let autoDeleteDrawings = false;
 let drawingPaths = []; // Store drawing paths with timestamps
@@ -34,6 +35,7 @@ const playerCount = document.getElementById('playerCount');
 const placedCount = document.getElementById('placedCount');
 const addObjectiveBtn = document.getElementById('addObjectiveBtn');
 const addBossBtn = document.getElementById('addBossBtn');
+const addTowerBtn = document.getElementById('addTowerBtn');
 const drawBtn = document.getElementById('drawBtn');
 const clearDrawBtn = document.getElementById('clearDrawBtn');
 const autoDeleteToggle = document.getElementById('autoDeleteToggle');
@@ -70,11 +72,26 @@ function renderMemberList() {
 // Render grouped view by team
 function renderGroupedView() {
     TEAM_ORDER.forEach(teamName => {
-        // Filter out placed members
-        const teamMembers = filteredMembers.filter(m => {
-            if (m.team !== teamName) return false;
+        // Get all team members first (not filtered yet)
+        const allTeamMembers = members.filter(m => m.team === teamName);
+        
+        // Then filter out placed members and apply search/role filters
+        const teamMembers = allTeamMembers.filter(m => {
             // Check if member is already placed individually
             if (isPlayerPlaced(m.id)) return false;
+            
+            // Apply search filter
+            const searchTerm = searchInput.value.toLowerCase();
+            const matchesSearch = !searchTerm || 
+                                 m.name.toLowerCase().includes(searchTerm) ||
+                                 m.role.toLowerCase().includes(searchTerm) ||
+                                 m.team.toLowerCase().includes(searchTerm);
+            if (!matchesSearch) return false;
+            
+            // Apply role filter
+            const matchesRole = currentRoleFilter === 'all' || m.role === currentRoleFilter;
+            if (!matchesRole) return false;
+            
             return true;
         });
         
@@ -115,10 +132,27 @@ function renderGroupedView() {
 
 // Render list view (all players)
 function renderListView() {
-    filteredMembers.forEach(member => {
+    // Filter members that aren't placed
+    const availableMembers = members.filter(m => {
         // Skip if member is already placed
-        if (isPlayerPlaced(member.id)) return;
+        if (isPlayerPlaced(m.id)) return false;
         
+        // Apply search filter
+        const searchTerm = searchInput.value.toLowerCase();
+        const matchesSearch = !searchTerm || 
+                             m.name.toLowerCase().includes(searchTerm) ||
+                             m.role.toLowerCase().includes(searchTerm) ||
+                             m.team.toLowerCase().includes(searchTerm);
+        if (!matchesSearch) return false;
+        
+        // Apply role filter
+        const matchesRole = currentRoleFilter === 'all' || m.role === currentRoleFilter;
+        if (!matchesRole) return false;
+        
+        return true;
+    });
+    
+    availableMembers.forEach(member => {
         const memberElement = createMemberElement(member);
         memberList.appendChild(memberElement);
     });
@@ -195,6 +229,7 @@ function setupEventListeners() {
     // Objective and Boss buttons
     addObjectiveBtn.addEventListener('click', toggleObjectiveMode);
     addBossBtn.addEventListener('click', toggleBossMode);
+    addTowerBtn.addEventListener('click', toggleTowerMode);
     
     // Drawing buttons
     drawBtn.addEventListener('click', toggleDrawingMode);
@@ -579,6 +614,7 @@ function toggleObjectiveMode() {
         drawingMode = false;
         addObjectiveBtn.classList.add('active');
         addBossBtn.classList.remove('active');
+        addTowerBtn.classList.remove('active');
         drawBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode', 'drawing-mode');
         mapArea.classList.add('placing-mode');
@@ -599,6 +635,28 @@ function toggleBossMode() {
         drawingMode = false;
         addBossBtn.classList.add('active');
         addObjectiveBtn.classList.remove('active');
+        addTowerBtn.classList.remove('active');
+        drawBtn.classList.remove('active');
+        mapArea.classList.remove('placing-mode', 'drawing-mode');
+        mapArea.classList.add('placing-mode');
+        drawingCanvas.classList.remove('active');
+    }
+}
+
+// Toggle tower placing mode
+function toggleTowerMode() {
+    if (placingMode === 'tower') {
+        // Deactivate
+        placingMode = null;
+        addTowerBtn.classList.remove('active');
+        mapArea.classList.remove('placing-mode');
+    } else {
+        // Activate tower mode
+        placingMode = 'tower';
+        drawingMode = false;
+        addTowerBtn.classList.add('active');
+        addObjectiveBtn.classList.remove('active');
+        addBossBtn.classList.remove('active');
         drawBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode', 'drawing-mode');
         mapArea.classList.add('placing-mode');
@@ -623,6 +681,8 @@ function handleMapClick(e) {
         placeObjectiveMarker(x, y);
     } else if (placingMode === 'boss') {
         placeBossMarker(x, y);
+    } else if (placingMode === 'tower') {
+        placeTowerMarker(x, y);
     }
 }
 
@@ -757,6 +817,74 @@ function removeBossMarker(bossId) {
         marker.remove();
     }
     placedBosses = placedBosses.filter(b => b.id !== bossId);
+    savePositions();
+    updatePlaceholder();
+}
+
+// Place tower marker
+function placeTowerMarker(x, y) {
+    const towerId = `tower-${Date.now()}`;
+    
+    const marker = document.createElement('div');
+    marker.className = 'tower-marker';
+    marker.dataset.towerId = towerId;
+    marker.style.left = `${x - 20}px`; // Center the 40px image
+    marker.style.top = `${y - 20}px`;
+    marker.draggable = true;
+    
+    marker.innerHTML = `
+        <img src="tower.png" alt="Tower" draggable="false">
+        <button class="remove-btn" onclick="removeTowerMarker('${towerId}')">×</button>
+    `;
+    
+    marker.addEventListener('dragstart', handleTowerDragStart);
+    marker.addEventListener('dragend', handleTowerDragEnd);
+    
+    mapArea.appendChild(marker);
+    
+    placedTowers.push({
+        id: towerId,
+        x: x,
+        y: y
+    });
+    
+    savePositions();
+    updatePlaceholder();
+}
+
+// Handle tower drag
+function handleTowerDragStart(e) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', e.currentTarget.dataset.towerId);
+    e.dataTransfer.setData('type', 'tower-marker');
+    e.currentTarget.style.opacity = '0.5';
+}
+
+function handleTowerDragEnd(e) {
+    e.currentTarget.style.opacity = '1';
+    
+    const towerId = e.currentTarget.dataset.towerId;
+    const rect = mapArea.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const tower = placedTowers.find(t => t.id === towerId);
+    if (tower) {
+        tower.x = x;
+        tower.y = y;
+        e.currentTarget.style.left = `${x - 20}px`; // Center the 40px image
+        e.currentTarget.style.top = `${y - 20}px`;
+        savePositions();
+    }
+}
+
+// Remove tower marker
+function removeTowerMarker(towerId) {
+    const marker = mapArea.querySelector(`[data-tower-id="${towerId}"]`);
+    if (marker) {
+        marker.remove();
+    }
+    placedTowers = placedTowers.filter(t => t.id !== towerId);
     savePositions();
     updatePlaceholder();
 }
@@ -1170,7 +1298,8 @@ function splitGroup(groupId) {
     savePositions();
     updateCounts();
 }
-function placeMemberOnMap(member, x, y) {
+
+// Place member marker on map
 function placeMemberOnMap(member, x, y) {
     const marker = document.createElement('div');
     marker.className = `member-marker role-${member.role}`;
@@ -1290,16 +1419,17 @@ function applyFilters(searchTerm = '') {
 // Clear all placements
 function clearAllPlacements() {
     const totalPlaced = getTotalPlacedPlayers();
-    const totalMarkers = placedObjectives.length + placedBosses.length + placedEnemies.length;
+    const totalMarkers = placedObjectives.length + placedBosses.length + placedTowers.length + placedEnemies.length;
     if (totalPlaced === 0 && totalMarkers === 0) return;
     
     if (confirm('Are you sure you want to remove all players and markers from the map?')) {
-        const markers = mapArea.querySelectorAll('.member-marker, .group-marker, .objective-marker, .boss-marker');
+        const markers = mapArea.querySelectorAll('.member-marker, .group-marker, .objective-marker, .boss-marker, .tower-marker');
         markers.forEach(marker => marker.remove());
         placedMembers = [];
         placedGroups = [];
         placedObjectives = [];
         placedBosses = [];
+        placedTowers = [];
         placedEnemies = [];
         savePositions();
         updateCounts();
@@ -1322,7 +1452,7 @@ function updatePlaceholder() {
     if (placeholder) {
         const hasContent = placedMembers.length > 0 || placedGroups.length > 0 || 
                           placedObjectives.length > 0 || placedBosses.length > 0 ||
-                          placedEnemies.length > 0;
+                          placedTowers.length > 0 || placedEnemies.length > 0;
         placeholder.style.display = hasContent ? 'none' : 'block';
     }
 }
@@ -1330,7 +1460,7 @@ function updatePlaceholder() {
 // Export positions
 function exportPositions() {
     const totalPlaced = getTotalPlacedPlayers();
-    const totalMarkers = placedObjectives.length + placedBosses.length + placedEnemies.length;
+    const totalMarkers = placedObjectives.length + placedBosses.length + placedTowers.length + placedEnemies.length;
     if (totalPlaced === 0 && totalMarkers === 0) {
         alert('No players or markers placed on the map yet!');
         return;
@@ -1374,6 +1504,11 @@ function exportPositions() {
             x: Math.round(boss.x),
             y: Math.round(boss.y)
         })),
+        towers: placedTowers.map(tower => ({
+            id: tower.id,
+            x: Math.round(tower.x),
+            y: Math.round(tower.y)
+        })),
         enemies: placedEnemies.map(enemy => ({
             id: enemy.id,
             x: Math.round(enemy.x),
@@ -1399,6 +1534,7 @@ function savePositions() {
         groups: placedGroups,
         objectives: placedObjectives,
         bosses: placedBosses,
+        towers: placedTowers,
         enemies: placedEnemies
     };
     localStorage.setItem('vcross-gvg-positions', JSON.stringify(data));
@@ -1459,6 +1595,13 @@ function loadSavedPositions() {
                 if (data.bosses) {
                     data.bosses.forEach(boss => {
                         placeBossMarker(boss.x, boss.y);
+                    });
+                }
+                
+                // Load towers
+                if (data.towers) {
+                    data.towers.forEach(tower => {
+                        placeTowerMarker(tower.x, tower.y);
                     });
                 }
                 
