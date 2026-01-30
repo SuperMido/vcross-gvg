@@ -1,0 +1,1010 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+header {
+    text-align: center;
+    color: white;
+    margin-bottom: 30px;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.main-content {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 20px;
+    height: calc(100vh - 150px);
+}
+
+/* Member Panel */
+.member-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.member-panel h2 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+.enemy-section {
+    margin-bottom: 15px;
+}
+
+.add-enemies-btn {
+    width: 100%;
+    padding: 12px 15px;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s;
+    box-shadow: 0 3px 10px rgba(231, 76, 60, 0.3);
+}
+
+.add-enemies-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+}
+
+.add-enemies-btn:active {
+    transform: translateY(0);
+}
+
+.add-enemies-btn:disabled {
+    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+#playerCount, #placedCount {
+    font-size: 0.9rem;
+    color: #667eea;
+    font-weight: normal;
+}
+
+.search-box {
+    margin-bottom: 15px;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 10px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.view-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.view-toggle-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.view-toggle-btn:hover {
+    background: #f0f0f0;
+}
+
+.view-toggle-btn.active {
+    background: #667eea;
+    color: white;
+}
+
+.role-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 15px;
+}
+
+.role-filter-btn {
+    padding: 5px 10px;
+    border: 2px solid #764ba2;
+    background: white;
+    color: #764ba2;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.3s;
+}
+
+.role-filter-btn:hover {
+    background: #f0f0f0;
+}
+
+.role-filter-btn.active {
+    background: #764ba2;
+    color: white;
+}
+
+.filter-btn:hover {
+    background: #f0f0f0;
+}
+
+.filter-btn.active {
+    background: #667eea;
+    color: white;
+}
+
+.member-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.team-group {
+    margin-bottom: 15px;
+}
+
+.team-group-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: grab;
+    user-select: none;
+}
+
+.team-group-header:active {
+    cursor: grabbing;
+}
+
+.team-group-header.dragging {
+    opacity: 0.5;
+}
+
+.team-group-header:hover {
+    opacity: 0.9;
+}
+
+.team-count {
+    font-size: 12px;
+    background: rgba(255,255,255,0.3);
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.team-group-players {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-left: 5px;
+}
+
+.team-group.collapsed .team-group-players {
+    display: none;
+}
+
+.team-group-header .toggle-icon {
+    transition: transform 0.3s;
+}
+
+.team-group.collapsed .toggle-icon {
+    transform: rotate(-90deg);
+}
+
+.member-item {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 12px;
+    border-radius: 8px;
+    cursor: move;
+    transition: all 0.3s;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.member-item .member-info {
+    flex: 1;
+}
+
+.member-item .role-badge {
+    background: rgba(255,255,255,0.3);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.member-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.member-item.dragging {
+    opacity: 0.5;
+    transform: rotate(3deg);
+}
+
+.member-name {
+    font-weight: bold;
+    font-size: 15px;
+    margin-bottom: 3px;
+}
+
+.member-role {
+    font-size: 12px;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+.member-team {
+    font-size: 12px;
+    opacity: 0.8;
+    background: rgba(255,255,255,0.2);
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+/* Map Panel */
+.map-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+}
+
+.map-panel h2 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+.map-toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.toolbar-btn {
+    flex: 1;
+    padding: 10px 15px;
+    border: 2px solid #ddd;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.toolbar-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.toolbar-btn.active {
+    border-color: #667eea;
+    background: #f0f4ff;
+}
+
+.objective-btn {
+    color: #e74c3c;
+    border-color: #e74c3c;
+}
+
+.objective-btn:hover {
+    background: #ffe5e5;
+}
+
+.objective-btn.active {
+    background: #ffe5e5;
+    border-color: #c0392b;
+}
+
+.boss-btn {
+    color: #8e44ad;
+    border-color: #8e44ad;
+}
+
+.boss-btn:hover {
+    background: #f4ecf7;
+}
+
+.boss-btn.active {
+    background: #f4ecf7;
+    border-color: #6c3483;
+}
+
+.marker-preview {
+    display: inline-block;
+}
+
+.objective-preview {
+    width: 12px;
+    height: 12px;
+    background: #e74c3c;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.boss-preview {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.draw-btn {
+    color: #3498db;
+    border-color: #3498db;
+}
+
+.draw-btn:hover {
+    background: #e3f2fd;
+}
+
+.draw-btn.active {
+    background: #e3f2fd;
+    border-color: #2980b9;
+}
+
+.clear-draw-btn {
+    color: #95a5a6;
+    border-color: #95a5a6;
+}
+
+.clear-draw-btn:hover {
+    background: #ecf0f1;
+}
+
+.map-toolbar-bottom {
+    margin-bottom: 15px;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.toggle-label input[type="checkbox"] {
+    display: none;
+}
+
+.toggle-slider {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: #bdc3c7;
+    border-radius: 24px;
+    transition: background 0.3s;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: white;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.3s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.toggle-label input:checked + .toggle-slider {
+    background: #27ae60;
+}
+
+.toggle-label input:checked + .toggle-slider::before {
+    transform: translateX(20px);
+}
+
+.toggle-text {
+    font-size: 13px;
+    color: #555;
+    font-weight: 500;
+}
+
+.map-area {
+    flex: 1;
+    background: #2c3e50;
+    border: 3px dashed #34495e;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    background-image: url('newmap.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    cursor: default;
+}
+
+.map-area.placing-mode {
+    cursor: crosshair;
+}
+
+.map-area.drawing-mode {
+    cursor: crosshair;
+}
+
+.drawing-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.drawing-canvas.active {
+    pointer-events: all;
+}
+
+.map-area.drag-over {
+    background-color: #e3f2fd;
+    border-color: #667eea;
+}
+
+.map-placeholder {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #999;
+    pointer-events: none;
+}
+
+.map-placeholder p {
+    margin: 10px 0;
+}
+
+.map-placeholder .instruction {
+    font-size: 14px;
+    color: #666;
+}
+
+.member-marker {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    cursor: move;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    z-index: 10;
+    user-select: none;
+    border: 3px solid rgba(255,255,255,0.9);
+    transition: all 0.3s ease;
+}
+
+.member-marker.role-Tank {
+    background: rgb(52, 152, 219);
+    border-color: rgba(255, 255, 255, 0.9);
+}
+
+.member-marker.role-DPS {
+    background: rgb(231, 76, 60);
+    border-color: rgba(255, 255, 255, 0.9);
+}
+
+.member-marker.role-Healer {
+    background: rgb(46, 204, 113);
+    border-color: rgba(255, 255, 255, 0.9);
+}
+
+.member-marker.role-Support {
+    background: rgb(241, 196, 15);
+    border-color: rgba(255, 255, 255, 0.9);
+}
+
+.member-marker:hover {
+    transform: scale(1.3);
+    z-index: 100;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.8);
+}
+
+.member-marker .marker-name,
+.member-marker .marker-role {
+    display: none;
+}
+
+.marker-tooltip {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 10px;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.marker-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+}
+
+.member-marker:hover .marker-tooltip {
+    display: block;
+}
+
+.tooltip-name {
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 3px;
+}
+
+.tooltip-info {
+    font-size: 11px;
+    opacity: 0.9;
+}
+
+.member-marker .remove-btn {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 22px;
+    height: 22px;
+    background: #ff4757;
+    color: white;
+    border: 2px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.member-marker:hover .remove-btn {
+    display: flex;
+}
+
+.member-marker.enemy {
+    background: rgb(231, 76, 60);
+    border-color: rgba(192, 57, 43, 0.9);
+}
+
+.group-marker.enemy-group {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    border-color: rgba(255, 255, 255, 0.9);
+}
+
+.remove-btn:hover {
+    background: #ff3838;
+    transform: scale(1.1);
+}
+
+/* Group Markers */
+.group-marker {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: 3px solid rgba(255,255,255,0.9);
+    cursor: move;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.6);
+    z-index: 10;
+    user-select: none;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.group-marker:hover {
+    transform: scale(1.3);
+    z-index: 100;
+    box-shadow: 0 5px 16px rgba(0,0,0,0.8);
+}
+
+.group-number {
+    font-size: 14px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.group-marker .group-tooltip {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 15px;
+    background: rgba(0, 0, 0, 0.95);
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    min-width: 200px;
+}
+
+.group-marker .group-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 8px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.95);
+}
+
+.group-marker:hover .group-tooltip {
+    display: block;
+}
+
+.tooltip-header {
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.tooltip-roles {
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.role-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    margin: 4px 0;
+}
+
+.role-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    border: 2px solid rgba(255,255,255,0.8);
+}
+
+.role-dot.role-Tank {
+    background: rgb(52, 152, 219);
+}
+
+.role-dot.role-DPS {
+    background: rgb(231, 76, 60);
+}
+
+.role-dot.role-Healer {
+    background: rgb(46, 204, 113);
+}
+
+.role-dot.role-Support {
+    background: rgb(241, 196, 15);
+}
+
+.tooltip-players {
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.player-name {
+    font-size: 11px;
+    padding: 2px 0;
+    opacity: 0.9;
+}
+
+.tooltip-actions {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.split-btn {
+    width: 100%;
+    padding: 6px 12px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    transition: all 0.3s;
+    pointer-events: all;
+}
+
+.split-btn:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.4);
+}
+
+.group-marker .remove-btn {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 20px;
+    height: 20px;
+    background: #ff4757;
+    color: white;
+    border: 2px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+.group-marker:hover .remove-btn {
+    display: flex;
+}
+
+.group-marker .remove-btn:hover {
+    background: #ff3838;
+    transform: scale(1.1);
+}
+
+/* Objective Markers */
+.objective-marker {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #e74c3c;
+    border: 3px solid white;
+    cursor: move;
+    box-shadow: 0 3px 10px rgba(231, 76, 60, 0.6);
+    z-index: 10;
+    user-select: none;
+    transition: all 0.3s ease;
+}
+
+.objective-marker:hover {
+    transform: scale(1.3);
+    z-index: 100;
+    box-shadow: 0 4px 16px rgba(231, 76, 60, 0.8);
+}
+
+.objective-marker .remove-btn {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 20px;
+    height: 20px;
+    background: #ff4757;
+    color: white;
+    border: 2px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+.objective-marker:hover .remove-btn {
+    display: flex;
+}
+
+.objective-marker .remove-btn:hover {
+    background: #ff3838;
+    transform: scale(1.1);
+}
+
+/* Boss Markers */
+.boss-marker {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    cursor: move;
+    z-index: 10;
+    user-select: none;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7));
+}
+
+.boss-marker img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.boss-marker:hover {
+    transform: scale(1.2);
+    z-index: 100;
+    filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.9));
+}
+
+.boss-marker .remove-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 22px;
+    height: 22px;
+    background: #ff4757;
+    color: white;
+    border: 2px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+.boss-marker:hover .remove-btn {
+    display: flex;
+}
+
+.boss-marker .remove-btn:hover {
+    background: #ff3838;
+    transform: scale(1.1);
+}
+
+.map-controls {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.map-controls button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+#clearMapBtn {
+    background: #ff4757;
+    color: white;
+}
+
+#clearMapBtn:hover {
+    background: #ff3838;
+}
+
+#exportBtn {
+    background: #667eea;
+    color: white;
+}
+
+#exportBtn:hover {
+    background: #5568d3;
+}
+
+/* Scrollbar Styling */
+.member-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.member-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.member-list::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 4px;
+}
+
+.member-list::-webkit-scrollbar-thumb:hover {
+    background: #5568d3;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .main-content {
+        grid-template-columns: 300px 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    
+    .member-panel {
+        height: 400px;
+    }
+    
+    .map-panel {
+        height: 600px;
+    }
+}

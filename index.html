@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vCross-GVG Member Map</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>When Wind Meets - Guild War Strategy</h1>
+            <p class="subtitle">Guild vs Guild Battle Map (Max 30 Players)</p>
+        </header>
+        
+        <div class="main-content">
+            <!-- Member List Panel -->
+            <div class="member-panel">
+                <h2>Guild Members <span id="playerCount">(0/30)</span></h2>
+                <div class="enemy-section">
+                    <button id="addEnemiesBtn" class="add-enemies-btn">
+                        ⚔️ Add 5 Enemies (<span id="enemyCount">0</span>/30)
+                    </button>
+                </div>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search players...">
+                </div>
+                <div class="view-toggle">
+                    <button class="view-toggle-btn active" data-view="grouped">Grouped by Team</button>
+                    <button class="view-toggle-btn" data-view="list">All Players</button>
+                </div>
+                <div class="role-filters">
+                    <button class="role-filter-btn active" data-role="all">All Roles</button>
+                    <button class="role-filter-btn" data-role="Tank">Tank</button>
+                    <button class="role-filter-btn" data-role="DPS">DPS</button>
+                    <button class="role-filter-btn" data-role="Healer">Healer</button>
+                    <button class="role-filter-btn" data-role="Support">Support</button>
+                </div>
+                <div id="memberList" class="member-list"></div>
+            </div>
+            
+            <!-- Map Area -->
+            <div class="map-panel">
+                <h2>Battle Map <span id="placedCount">(0/30 Placed)</span></h2>
+                <div class="map-toolbar">
+                    <button id="addObjectiveBtn" class="toolbar-btn objective-btn" title="Add Objective Marker">
+                        <span class="marker-preview objective-preview"></span>
+                        Add Objective
+                    </button>
+                    <button id="addBossBtn" class="toolbar-btn boss-btn" title="Add Boss Marker">
+                        <img src="boss.png" alt="Boss" style="width: 20px; height: 20px; object-fit: contain;">
+                        Add Boss
+                    </button>
+                    <button id="drawBtn" class="toolbar-btn draw-btn" title="Draw on Map">
+                        ✏️ Draw
+                    </button>
+                    <button id="clearDrawBtn" class="toolbar-btn clear-draw-btn" title="Clear All Drawings">
+                        🗑️ Clear Draw
+                    </button>
+                </div>
+                <div class="map-toolbar-bottom">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="autoDeleteToggle" />
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-text">Auto-delete drawings after 10s</span>
+                    </label>
+                </div>
+                <div id="mapArea" class="map-area">
+                    <canvas id="drawingCanvas" class="drawing-canvas"></canvas>
+                    <div class="map-placeholder">
+                        <p class="instruction">Drag players from the list to place them on the battle map</p>
+                    </div>
+                </div>
+                <div class="map-controls">
+                    <button id="clearMapBtn">Clear All Placements</button>
+                    <button id="exportBtn">Export Strategy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
