@@ -4,16 +4,20 @@ let placedGroups = []; // Store group placements
 let placedObjectives = []; // Store objective markers
 let placedBosses = []; // Store boss markers
 let placedTowers = []; // Store tower markers
+let placedTrees = []; // Store tree markers
 let placedEnemies = []; // Store enemy markers
 let filteredMembers = [...members];
 let currentFilter = 'all';
 let currentRoleFilter = 'all';
 let currentView = 'grouped'; // 'grouped' or 'list'
-let placingMode = null; // 'objective' or 'boss' or 'tower' or null
+let placingMode = null; // 'objective' or 'boss' or 'tower' or 'tree' or null
 let drawingMode = false;
 let autoDeleteDrawings = false;
 let drawingPaths = []; // Store drawing paths with timestamps
 let drawingDeleteTimers = []; // Store timers for auto-delete
+let drawingHistory = []; // Store history for undo
+let drawingRedoStack = []; // Store redo stack
+let activeSplitGroupId = null; // Track which group has split view open
 const MAX_PLAYERS = 30;
 const MAX_ENEMIES = 30;
 const ENEMIES_PER_CLICK = 5;
@@ -36,13 +40,25 @@ const placedCount = document.getElementById('placedCount');
 const addObjectiveBtn = document.getElementById('addObjectiveBtn');
 const addBossBtn = document.getElementById('addBossBtn');
 const addTowerBtn = document.getElementById('addTowerBtn');
+const addTreeBtn = document.getElementById('addTreeBtn');
 const drawBtn = document.getElementById('drawBtn');
 const clearDrawBtn = document.getElementById('clearDrawBtn');
+const undoDrawBtn = document.getElementById('undoDrawBtn');
+const redoDrawBtn = document.getElementById('redoDrawBtn');
 const autoDeleteToggle = document.getElementById('autoDeleteToggle');
 const drawingCanvas = document.getElementById('drawingCanvas');
 const ctx = drawingCanvas.getContext('2d');
 const addEnemiesBtn = document.getElementById('addEnemiesBtn');
 const enemyCount = document.getElementById('enemyCount');
+const managePlayersBtn = document.getElementById('managePlayersBtn');
+const playerManagementModal = document.getElementById('playerManagementModal');
+const playerEditModal = document.getElementById('playerEditModal');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const closeEditModalBtn = document.getElementById('closeEditModalBtn');
+const addNewPlayerBtn = document.getElementById('addNewPlayerBtn');
+const playerManagementList = document.getElementById('playerManagementList');
+const playerEditForm = document.getElementById('playerEditForm');
+const cancelEditBtn = document.getElementById('cancelEditBtn');
 
 // Initialize the application
 function init() {
@@ -51,6 +67,9 @@ function init() {
     loadSavedPositions();
     updateCounts();
     initializeCanvas();
+    setupClickOutsideHandler();
+    setupPlayerManagementHandlers();
+    loadPlayersFromStorage();
 }
 
 // Load map image if exists
@@ -174,6 +193,10 @@ function createMemberElement(member) {
         <div class="member-info">
             <div class="member-name">${member.name}</div>
             <div class="member-team">${member.team}</div>
+            <div class="member-weapons">
+                <div class="weapon-item">W1: ${member.weapon1 || 'None'}</div>
+                <div class="weapon-item">W2: ${member.weapon2 || 'None'}</div>
+            </div>
         </div>
         <div class="role-badge">${member.role}</div>
     `;
@@ -230,10 +253,13 @@ function setupEventListeners() {
     addObjectiveBtn.addEventListener('click', toggleObjectiveMode);
     addBossBtn.addEventListener('click', toggleBossMode);
     addTowerBtn.addEventListener('click', toggleTowerMode);
+    addTreeBtn.addEventListener('click', toggleTreeMode);
     
     // Drawing buttons
     drawBtn.addEventListener('click', toggleDrawingMode);
     clearDrawBtn.addEventListener('click', clearAllDrawings);
+    undoDrawBtn.addEventListener('click', undoDrawing);
+    redoDrawBtn.addEventListener('click', redoDrawing);
     autoDeleteToggle.addEventListener('change', handleAutoDeleteToggle);
     
     // Enemy button
@@ -283,7 +309,10 @@ function handleDrop(e) {
     if (type === 'team') {
         // Dropping a team group
         const teamName = data;
-        placeTeamGroupOnMap(teamName, x, y);
+        // Adjust position to top-right of cursor for better visibility
+        const adjustedX = x + 21; // 16px radius + 5px offset
+        const adjustedY = y - 21;
+        placeTeamGroupOnMap(teamName, adjustedX, adjustedY);
     } else if (type === 'member') {
         // Dropping individual member
         const memberId = parseInt(data);
@@ -321,7 +350,10 @@ function handleDrop(e) {
             return;
         }
         
-        placeMemberOnMap(member, x, y);
+        // Adjust position to top-right of cursor for better visibility
+        const adjustedX = x + 13; // 8px radius + 5px offset
+        const adjustedY = y - 13;
+        placeMemberOnMap(member, adjustedX, adjustedY);
     }
 }
 
@@ -403,12 +435,16 @@ function createNewGroup(teamName, teamMembers, x, y) {
     const groupId = `group-${Date.now()}`;
     const memberIds = teamMembers.map(m => m.id);
     
+    // Adjust position to top-right of cursor
+    const adjustedX = x + 21; // 16px radius + 5px offset
+    const adjustedY = y - 21;
+    
     const group = {
         id: groupId,
         teams: [teamName],
         memberIds: memberIds,
-        x: x,
-        y: y
+        x: adjustedX,
+        y: adjustedY
     };
     
     placedGroups.push(group);
@@ -444,8 +480,8 @@ function renderGroupMarker(group) {
     const marker = document.createElement('div');
     marker.className = 'group-marker';
     marker.dataset.groupId = group.id;
-    marker.style.left = `${group.x}px`;
-    marker.style.top = `${group.y}px`;
+    marker.style.left = `${group.x - 16}px`; // Center the 32px marker
+    marker.style.top = `${group.y - 16}px`;
     marker.draggable = true;
     
     updateGroupMarker(marker, group);
@@ -460,6 +496,7 @@ function renderGroupMarker(group) {
 // Update group marker content
 function updateGroupMarker(marker, group) {
     const roleCount = countRoles(group.memberIds);
+    const groupMembers = group.memberIds.map(id => members.find(m => m.id === id)).filter(m => m);
     
     marker.innerHTML = `
         <div class="group-number">${group.memberIds.length}</div>
@@ -471,15 +508,24 @@ function updateGroupMarker(marker, group) {
                 ${roleCount.Healer > 0 ? `<div class="role-item"><span class="role-dot role-Healer"></span> ${roleCount.Healer} Healer</div>` : ''}
                 ${roleCount.Support > 0 ? `<div class="role-item"><span class="role-dot role-Support"></span> ${roleCount.Support} Support</div>` : ''}
             </div>
-            <div class="tooltip-players">
-                ${group.memberIds.map(id => {
-                    const member = members.find(m => m.id === id);
-                    return `<div class="player-name">${member.name}</div>`;
-                }).join('')}
+            <div class="tooltip-actions">
+                <button class="split-btn" onclick="toggleSplitView('${group.id}')">⚡ Split Members</button>
+            </div>
+            <div class="split-members" id="split-${group.id}" style="display: none;">
+                ${groupMembers.map(member => `
+                    <div class="split-member-item" data-member-id="${member.id}" data-group-id="${group.id}">
+                        <span class="role-dot role-${member.role}"></span>
+                        <div class="split-member-info">
+                            <div><span>${member.name}</span> - <span class="member-role">${member.role}</span></div>
+                            <div class="split-member-weapons"><small>⚔️ ${member.weapon1 || 'N/A'} | ${member.weapon2 || 'N/A'}</small></div>
+                        </div>
+                        <button class="split-remove-btn" onclick="splitMemberFromGroup('${group.id}', ${member.id})">×</button>
+                    </div>
+                `).join('')}
             </div>
             ${group.teams.length > 1 ? `
                 <div class="tooltip-actions">
-                    <button class="split-btn" onclick="splitGroup('${group.id}')">Split into Teams</button>
+                    <button class="split-btn" onclick="splitGroup('${group.id}')">📦 Split into Teams</button>
                 </div>
             ` : ''}
         </div>
@@ -520,8 +566,8 @@ function handleGroupMarkerDragEnd(e) {
     if (group) {
         group.x = x;
         group.y = y;
-        e.currentTarget.style.left = `${x}px`;
-        e.currentTarget.style.top = `${y}px`;
+        e.currentTarget.style.left = `${x - 16}px`; // Center the 32px marker
+        e.currentTarget.style.top = `${y - 16}px`;
         
         // Check for merging with other groups
         checkAndMergeNearbyGroups(group);
@@ -615,6 +661,7 @@ function toggleObjectiveMode() {
         addObjectiveBtn.classList.add('active');
         addBossBtn.classList.remove('active');
         addTowerBtn.classList.remove('active');
+        addTreeBtn.classList.remove('active');
         drawBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode', 'drawing-mode');
         mapArea.classList.add('placing-mode');
@@ -636,6 +683,7 @@ function toggleBossMode() {
         addBossBtn.classList.add('active');
         addObjectiveBtn.classList.remove('active');
         addTowerBtn.classList.remove('active');
+        addTreeBtn.classList.remove('active');
         drawBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode', 'drawing-mode');
         mapArea.classList.add('placing-mode');
@@ -657,6 +705,29 @@ function toggleTowerMode() {
         addTowerBtn.classList.add('active');
         addObjectiveBtn.classList.remove('active');
         addBossBtn.classList.remove('active');
+        addTreeBtn.classList.remove('active');
+        drawBtn.classList.remove('active');
+        mapArea.classList.remove('placing-mode', 'drawing-mode');
+        mapArea.classList.add('placing-mode');
+        drawingCanvas.classList.remove('active');
+    }
+}
+
+// Toggle tree placing mode
+function toggleTreeMode() {
+    if (placingMode === 'tree') {
+        // Deactivate
+        placingMode = null;
+        addTreeBtn.classList.remove('active');
+        mapArea.classList.remove('placing-mode');
+    } else {
+        // Activate tree mode
+        placingMode = 'tree';
+        drawingMode = false;
+        addTreeBtn.classList.add('active');
+        addObjectiveBtn.classList.remove('active');
+        addBossBtn.classList.remove('active');
+        addTowerBtn.classList.remove('active');
         drawBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode', 'drawing-mode');
         mapArea.classList.add('placing-mode');
@@ -683,6 +754,8 @@ function handleMapClick(e) {
         placeBossMarker(x, y);
     } else if (placingMode === 'tower') {
         placeTowerMarker(x, y);
+    } else if (placingMode === 'tree') {
+        placeTreeMarker(x, y);
     }
 }
 
@@ -723,8 +796,8 @@ function placeBossMarker(x, y) {
     const marker = document.createElement('div');
     marker.className = 'boss-marker';
     marker.dataset.bossId = bossId;
-    marker.style.left = `${x - 25}px`; // Center the 50px image
-    marker.style.top = `${y - 25}px`;
+    marker.style.left = `${x - 30}px`; // Center the 60px image
+    marker.style.top = `${y - 30}px`;
     marker.draggable = true;
     
     marker.innerHTML = `
@@ -793,8 +866,8 @@ function handleBossDragEnd(e) {
     if (boss) {
         boss.x = x;
         boss.y = y;
-        e.currentTarget.style.left = `${x - 25}px`; // Center the 50px image
-        e.currentTarget.style.top = `${y - 25}px`;
+        e.currentTarget.style.left = `${x - 30}px`; // Center the 60px image
+        e.currentTarget.style.top = `${y - 30}px`;
         savePositions();
     }
 }
@@ -828,8 +901,8 @@ function placeTowerMarker(x, y) {
     const marker = document.createElement('div');
     marker.className = 'tower-marker';
     marker.dataset.towerId = towerId;
-    marker.style.left = `${x - 20}px`; // Center the 40px image
-    marker.style.top = `${y - 20}px`;
+    marker.style.left = `${x - 30}px`; // Center the 60px image
+    marker.style.top = `${y - 30}px`;
     marker.draggable = true;
     
     marker.innerHTML = `
@@ -872,8 +945,8 @@ function handleTowerDragEnd(e) {
     if (tower) {
         tower.x = x;
         tower.y = y;
-        e.currentTarget.style.left = `${x - 20}px`; // Center the 40px image
-        e.currentTarget.style.top = `${y - 20}px`;
+        e.currentTarget.style.left = `${x - 30}px`; // Center the 60px image
+        e.currentTarget.style.top = `${y - 30}px`;
         savePositions();
     }
 }
@@ -885,6 +958,74 @@ function removeTowerMarker(towerId) {
         marker.remove();
     }
     placedTowers = placedTowers.filter(t => t.id !== towerId);
+    savePositions();
+    updatePlaceholder();
+}
+
+// Place tree marker
+function placeTreeMarker(x, y) {
+    const treeId = `tree-${Date.now()}`;
+    
+    const marker = document.createElement('div');
+    marker.className = 'tree-marker';
+    marker.dataset.treeId = treeId;
+    marker.style.left = `${x - 25}px`; // Center the 50px marker
+    marker.style.top = `${y - 25}px`;
+    marker.draggable = true;
+    
+    marker.innerHTML = `
+        🌳
+        <button class="remove-btn" onclick="removeTreeMarker('${treeId}')">×</button>
+    `;
+    
+    marker.addEventListener('dragstart', handleTreeDragStart);
+    marker.addEventListener('dragend', handleTreeDragEnd);
+    
+    mapArea.appendChild(marker);
+    
+    placedTrees.push({
+        id: treeId,
+        x: x,
+        y: y
+    });
+    
+    savePositions();
+    updatePlaceholder();
+}
+
+// Handle tree drag
+function handleTreeDragStart(e) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', e.currentTarget.dataset.treeId);
+    e.dataTransfer.setData('type', 'tree-marker');
+    e.currentTarget.style.opacity = '0.5';
+}
+
+function handleTreeDragEnd(e) {
+    e.currentTarget.style.opacity = '1';
+    
+    const treeId = e.currentTarget.dataset.treeId;
+    const rect = mapArea.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const tree = placedTrees.find(t => t.id === treeId);
+    if (tree) {
+        tree.x = x;
+        tree.y = y;
+        e.currentTarget.style.left = `${x - 25}px`; // Center the 50px marker
+        e.currentTarget.style.top = `${y - 25}px`;
+        savePositions();
+    }
+}
+
+// Remove tree marker
+function removeTreeMarker(treeId) {
+    const marker = mapArea.querySelector(`[data-tree-id="${treeId}"]`);
+    if (marker) {
+        marker.remove();
+    }
+    placedTrees = placedTrees.filter(t => t.id !== treeId);
     savePositions();
     updatePlaceholder();
 }
@@ -1054,6 +1195,20 @@ function initializeCanvas() {
             
             drawingPaths.push(pathData);
             
+            // Only add to history if auto-delete is OFF
+            if (!autoDeleteDrawings) {
+                // Create a deep copy of the current state
+                const stateCopy = drawingPaths.map(path => ({
+                    points: [...path.points],
+                    timestamp: path.timestamp,
+                    color: path.color,
+                    width: path.width
+                }));
+                drawingHistory.push(stateCopy);
+                drawingRedoStack = []; // Clear redo stack when new action is made
+                updateUndoRedoButtons();
+            }
+            
             // Set up auto-delete if enabled
             if (autoDeleteDrawings) {
                 schedulePathDeletion(drawingPaths.length - 1);
@@ -1120,6 +1275,19 @@ function initializeCanvas() {
             };
             
             drawingPaths.push(pathData);
+            
+            // Only add to history if auto-delete is OFF
+            if (!autoDeleteDrawings) {
+                const stateCopy = drawingPaths.map(path => ({
+                    points: [...path.points],
+                    timestamp: path.timestamp,
+                    color: path.color,
+                    width: path.width
+                }));
+                drawingHistory.push(stateCopy);
+                drawingRedoStack = [];
+                updateUndoRedoButtons();
+            }
             
             if (autoDeleteDrawings) {
                 schedulePathDeletion(drawingPaths.length - 1);
@@ -1192,10 +1360,107 @@ function clearAllDrawings() {
     if (drawingPaths.length === 0) return;
     
     if (confirm('Are you sure you want to clear all drawings?')) {
+        // Save current state to history before clearing (deep copy)
+        if (!autoDeleteDrawings && drawingPaths.length > 0) {
+            const stateCopy = drawingPaths.map(path => ({
+                points: [...path.points],
+                timestamp: path.timestamp,
+                color: path.color,
+                width: path.width
+            }));
+            drawingHistory.push(stateCopy);
+        }
+        
         drawingPaths = [];
         drawingDeleteTimers.forEach(timer => clearTimeout(timer));
         drawingDeleteTimers = [];
         redrawAllPaths();
+        updateUndoRedoButtons();
+    }
+}
+
+// Undo drawing
+function undoDrawing() {
+    if (autoDeleteDrawings) {
+        alert('Undo is not available when auto-delete is enabled. Please disable auto-delete first.');
+        return;
+    }
+    
+    if (drawingHistory.length === 0) return;
+    
+    // Save current state to redo stack (deep copy)
+    const currentStateCopy = drawingPaths.map(path => ({
+        points: [...path.points],
+        timestamp: path.timestamp,
+        color: path.color,
+        width: path.width
+    }));
+    drawingRedoStack.push(currentStateCopy);
+    
+    // Restore previous state (pop returns the last element)
+    drawingHistory.pop(); // Remove current state
+    const previousState = drawingHistory[drawingHistory.length - 1]; // Get previous state
+    
+    if (previousState) {
+        // Deep copy the previous state
+        drawingPaths = previousState.map(path => ({
+            points: [...path.points],
+            timestamp: path.timestamp,
+            color: path.color,
+            width: path.width
+        }));
+    } else {
+        // No previous state means go back to empty
+        drawingPaths = [];
+    }
+    
+    redrawAllPaths();
+    updateUndoRedoButtons();
+}
+
+// Redo drawing
+function redoDrawing() {
+    if (autoDeleteDrawings) {
+        alert('Redo is not available when auto-delete is enabled. Please disable auto-delete first.');
+        return;
+    }
+    
+    if (drawingRedoStack.length === 0) return;
+    
+    // Get the next state from redo stack
+    const nextState = drawingRedoStack.pop();
+    
+    if (nextState) {
+        // Save current state to history (deep copy)
+        const currentStateCopy = drawingPaths.map(path => ({
+            points: [...path.points],
+            timestamp: path.timestamp,
+            color: path.color,
+            width: path.width
+        }));
+        drawingHistory.push(currentStateCopy);
+        
+        // Restore next state (deep copy)
+        drawingPaths = nextState.map(path => ({
+            points: [...path.points],
+            timestamp: path.timestamp,
+            color: path.color,
+            width: path.width
+        }));
+    }
+    
+    redrawAllPaths();
+    updateUndoRedoButtons();
+}
+
+// Update undo/redo button states
+function updateUndoRedoButtons() {
+    if (autoDeleteDrawings) {
+        undoDrawBtn.disabled = true;
+        redoDrawBtn.disabled = true;
+    } else {
+        undoDrawBtn.disabled = drawingHistory.length === 0;
+        redoDrawBtn.disabled = drawingRedoStack.length === 0;
     }
 }
 
@@ -1204,6 +1469,11 @@ function handleAutoDeleteToggle(e) {
     autoDeleteDrawings = e.target.checked;
     
     if (autoDeleteDrawings) {
+        // Clear history when enabling auto-delete
+        drawingHistory = [];
+        drawingRedoStack = [];
+        updateUndoRedoButtons();
+        
         // Schedule deletion for existing paths
         drawingPaths.forEach((path, index) => {
             const elapsed = Date.now() - path.timestamp;
@@ -1221,9 +1491,23 @@ function handleAutoDeleteToggle(e) {
         drawingPaths = drawingPaths.filter(p => p !== null);
         redrawAllPaths();
     } else {
-        // Clear all timers
+        // Clear all timers when disabling auto-delete
         drawingDeleteTimers.forEach(timer => clearTimeout(timer));
         drawingDeleteTimers = [];
+        
+        // Initialize history with current state (deep copy)
+        if (drawingPaths.length > 0) {
+            const stateCopy = drawingPaths.map(path => ({
+                points: [...path.points],
+                timestamp: path.timestamp,
+                color: path.color,
+                width: path.width
+            }));
+            drawingHistory = [stateCopy];
+        } else {
+            drawingHistory = [[]]; // Empty state
+        }
+        updateUndoRedoButtons();
     }
 }
 
@@ -1244,6 +1528,68 @@ function schedulePathDeletion(index, delay = AUTO_DELETE_DELAY) {
     
     drawingDeleteTimers.push(timer);
 }
+// Toggle split member view
+function toggleSplitView(groupId) {
+    const splitDiv = document.getElementById(`split-${groupId}`);
+    if (splitDiv) {
+        const isCurrentlyOpen = splitDiv.style.display !== 'none';
+        
+        // Close any other open split views
+        if (activeSplitGroupId && activeSplitGroupId !== groupId) {
+            const otherSplitDiv = document.getElementById(`split-${activeSplitGroupId}`);
+            if (otherSplitDiv) {
+                otherSplitDiv.style.display = 'none';
+            }
+        }
+        
+        // Toggle current split view
+        if (isCurrentlyOpen) {
+            splitDiv.style.display = 'none';
+            activeSplitGroupId = null;
+        } else {
+            splitDiv.style.display = 'block';
+            activeSplitGroupId = groupId;
+        }
+    }
+}
+
+// Split member from group - place near the group
+function splitMemberFromGroup(groupId, memberId) {
+    const group = placedGroups.find(g => g.id === groupId);
+    if (!group) return;
+    
+    // Get member info
+    const member = members.find(m => m.id === memberId);
+    if (!member) return;
+    
+    // Remove member from group
+    group.memberIds = group.memberIds.filter(id => id !== memberId);
+    
+    // Calculate position near the group (offset by 50px to the right)
+    const offsetX = 50;
+    const offsetY = 0;
+    const newX = group.x + offsetX;
+    const newY = group.y + offsetY;
+    
+    // If group is empty, remove it
+    if (group.memberIds.length === 0) {
+        removeGroupMarker(groupId);
+    } else {
+        // Update the group marker
+        const marker = mapArea.querySelector(`[data-group-id="${groupId}"]`);
+        if (marker) {
+            updateGroupMarker(marker, group);
+        }
+    }
+    
+    // Place member individually near the group
+    placeMemberOnMap(member, newX, newY);
+    
+    savePositions();
+    updateCounts();
+    renderMemberList();
+}
+
 function splitGroup(groupId) {
     const group = placedGroups.find(g => g.id === groupId);
     if (!group) return;
@@ -1304,14 +1650,14 @@ function placeMemberOnMap(member, x, y) {
     const marker = document.createElement('div');
     marker.className = `member-marker role-${member.role}`;
     marker.dataset.memberId = member.id;
-    marker.style.left = `${x}px`;
-    marker.style.top = `${y}px`;
+    marker.style.left = `${x - 8}px`; // Center the 16px marker
+    marker.style.top = `${y - 8}px`;
     marker.draggable = true;
     
     marker.innerHTML = `
         <div class="marker-tooltip">
-            <div class="tooltip-name">${member.name}</div>
             <div class="tooltip-info">${member.role} | ${member.team}</div>
+            <div class="tooltip-weapons">⚔️ ${member.weapon1 || 'N/A'} | ${member.weapon2 || 'N/A'}</div>
         </div>
         <button class="remove-btn" onclick="removeMemberMarker(${member.id})">×</button>
     `;
@@ -1357,8 +1703,8 @@ function handleMarkerDragEnd(e) {
     if (placement) {
         placement.x = x;
         placement.y = y;
-        e.currentTarget.style.left = `${x}px`;
-        e.currentTarget.style.top = `${y}px`;
+        e.currentTarget.style.left = `${x - 8}px`; // Center the 16px marker
+        e.currentTarget.style.top = `${y - 8}px`;
         savePositions();
     }
 }
@@ -1419,17 +1765,18 @@ function applyFilters(searchTerm = '') {
 // Clear all placements
 function clearAllPlacements() {
     const totalPlaced = getTotalPlacedPlayers();
-    const totalMarkers = placedObjectives.length + placedBosses.length + placedTowers.length + placedEnemies.length;
+    const totalMarkers = placedObjectives.length + placedBosses.length + placedTowers.length + placedTrees.length + placedEnemies.length;
     if (totalPlaced === 0 && totalMarkers === 0) return;
     
     if (confirm('Are you sure you want to remove all players and markers from the map?')) {
-        const markers = mapArea.querySelectorAll('.member-marker, .group-marker, .objective-marker, .boss-marker, .tower-marker');
+        const markers = mapArea.querySelectorAll('.member-marker, .group-marker, .objective-marker, .boss-marker, .tower-marker, .tree-marker');
         markers.forEach(marker => marker.remove());
         placedMembers = [];
         placedGroups = [];
         placedObjectives = [];
         placedBosses = [];
         placedTowers = [];
+        placedTrees = [];
         placedEnemies = [];
         savePositions();
         updateCounts();
@@ -1452,7 +1799,7 @@ function updatePlaceholder() {
     if (placeholder) {
         const hasContent = placedMembers.length > 0 || placedGroups.length > 0 || 
                           placedObjectives.length > 0 || placedBosses.length > 0 ||
-                          placedTowers.length > 0 || placedEnemies.length > 0;
+                          placedTowers.length > 0 || placedTrees.length > 0 || placedEnemies.length > 0;
         placeholder.style.display = hasContent ? 'none' : 'block';
     }
 }
@@ -1460,7 +1807,7 @@ function updatePlaceholder() {
 // Export positions
 function exportPositions() {
     const totalPlaced = getTotalPlacedPlayers();
-    const totalMarkers = placedObjectives.length + placedBosses.length + placedTowers.length + placedEnemies.length;
+    const totalMarkers = placedObjectives.length + placedBosses.length + placedTowers.length + placedTrees.length + placedEnemies.length;
     if (totalPlaced === 0 && totalMarkers === 0) {
         alert('No players or markers placed on the map yet!');
         return;
@@ -1509,6 +1856,11 @@ function exportPositions() {
             x: Math.round(tower.x),
             y: Math.round(tower.y)
         })),
+        trees: placedTrees.map(tree => ({
+            id: tree.id,
+            x: Math.round(tree.x),
+            y: Math.round(tree.y)
+        })),
         enemies: placedEnemies.map(enemy => ({
             id: enemy.id,
             x: Math.round(enemy.x),
@@ -1535,6 +1887,7 @@ function savePositions() {
         objectives: placedObjectives,
         bosses: placedBosses,
         towers: placedTowers,
+        trees: placedTrees,
         enemies: placedEnemies
     };
     localStorage.setItem('vcross-gvg-positions', JSON.stringify(data));
@@ -1605,6 +1958,13 @@ function loadSavedPositions() {
                     });
                 }
                 
+                // Load trees
+                if (data.trees) {
+                    data.trees.forEach(tree => {
+                        placeTreeMarker(tree.x, tree.y);
+                    });
+                }
+                
                 // Load enemies
                 if (data.enemies) {
                     data.enemies.forEach(enemy => {
@@ -1616,6 +1976,331 @@ function loadSavedPositions() {
             updateEnemyCount();
         } catch (e) {
             console.error('Error loading saved positions:', e);
+        }
+    }
+}
+
+// Setup click outside handler to close split view
+function setupClickOutsideHandler() {
+    document.addEventListener('click', function(e) {
+        // If no split view is active, do nothing
+        if (!activeSplitGroupId) return;
+        
+        // Check if click is on a group marker or its children (tooltip, buttons, etc.)
+        const clickedMarker = e.target.closest('.group-marker');
+        if (clickedMarker) {
+            // If clicking on the same group marker, let toggleSplitView handle it
+            const clickedGroupId = clickedMarker.dataset.groupId;
+            if (clickedGroupId === activeSplitGroupId) {
+                return; // Let the button click handle toggling
+            }
+        }
+        
+        // Check if click is on a draggable item being dragged
+        if (e.target.closest('[draggable="true"]') && e.target.closest('[draggable="true"]').style.opacity === '0.5') {
+            return; // Don't close while dragging
+        }
+        
+        // Check if click is on a split member item (for dragging)
+        if (e.target.closest('.split-member-item')) {
+            return; // Allow interaction with split members
+        }
+        
+        // Click is outside - close the split view
+        const splitDiv = document.getElementById(`split-${activeSplitGroupId}`);
+        if (splitDiv) {
+            splitDiv.style.display = 'none';
+        }
+        activeSplitGroupId = null;
+    });
+}
+
+// Player Management Functions
+function setupPlayerManagementHandlers() {
+    // Open player management modal
+    managePlayersBtn.addEventListener('click', openPlayerManagementModal);
+    
+    // Close modals
+    closeModalBtn.addEventListener('click', closePlayerManagementModal);
+    closeEditModalBtn.addEventListener('click', closePlayerEditModal);
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', (e) => {
+        if (e.target === playerManagementModal) {
+            closePlayerManagementModal();
+        }
+        if (e.target === playerEditModal) {
+            closePlayerEditModal();
+        }
+    });
+    
+    // Add new player button
+    addNewPlayerBtn.addEventListener('click', () => {
+        openPlayerEditModal();
+    });
+    
+    // Cancel edit button
+    cancelEditBtn.addEventListener('click', closePlayerEditModal);
+    
+    // Form submission
+    playerEditForm.addEventListener('submit', handlePlayerFormSubmit);
+}
+
+function openPlayerManagementModal() {
+    renderPlayerManagementList();
+    playerManagementModal.style.display = 'flex';
+}
+
+function closePlayerManagementModal() {
+    playerManagementModal.style.display = 'none';
+}
+
+function openPlayerEditModal(playerId = null) {
+    const editModalTitle = document.getElementById('editModalTitle');
+    const editPlayerId = document.getElementById('editPlayerId');
+    const editPlayerName = document.getElementById('editPlayerName');
+    const editPlayerRole = document.getElementById('editPlayerRole');
+    const editPlayerTeam = document.getElementById('editPlayerTeam');
+    const editPlayerWeapon1 = document.getElementById('editPlayerWeapon1');
+    const editPlayerWeapon2 = document.getElementById('editPlayerWeapon2');
+    
+    if (playerId) {
+        // Edit existing player
+        const player = members.find(m => m.id === playerId);
+        if (player) {
+            editModalTitle.textContent = 'Edit Player';
+            editPlayerId.value = playerId;
+            editPlayerName.value = player.name;
+            editPlayerRole.value = player.role;
+            editPlayerTeam.value = player.team;
+            editPlayerWeapon1.value = player.weapon1 || 'Nameless Sword';
+            editPlayerWeapon2.value = player.weapon2 || 'Nameless Spear';
+        }
+    } else {
+        // Add new player
+        editModalTitle.textContent = 'Add New Player';
+        editPlayerId.value = '';
+        editPlayerName.value = '';
+        editPlayerRole.value = 'DPS';
+        editPlayerTeam.value = 'FrontLine';
+        editPlayerWeapon1.value = 'Nameless Sword';
+        editPlayerWeapon2.value = 'Nameless Spear';
+    }
+    
+    playerEditModal.style.display = 'flex';
+    editPlayerName.focus();
+}
+
+function closePlayerEditModal() {
+    playerEditModal.style.display = 'none';
+    playerEditForm.reset();
+}
+
+function handlePlayerFormSubmit(e) {
+    e.preventDefault();
+    
+    const editPlayerId = document.getElementById('editPlayerId');
+    const editPlayerName = document.getElementById('editPlayerName');
+    const editPlayerRole = document.getElementById('editPlayerRole');
+    const editPlayerTeam = document.getElementById('editPlayerTeam');
+    const editPlayerWeapon1 = document.getElementById('editPlayerWeapon1');
+    const editPlayerWeapon2 = document.getElementById('editPlayerWeapon2');
+    
+    const playerId = editPlayerId.value ? parseInt(editPlayerId.value) : null;
+    const playerName = editPlayerName.value.trim();
+    const playerRole = editPlayerRole.value;
+    const playerTeam = editPlayerTeam.value;
+    const playerWeapon1 = editPlayerWeapon1.value;
+    const playerWeapon2 = editPlayerWeapon2.value;
+    
+    if (!playerName) {
+        alert('Player name is required!');
+        return;
+    }
+    
+    if (playerId) {
+        // Edit existing player
+        const player = members.find(m => m.id === playerId);
+        if (player) {
+            player.name = playerName;
+            player.role = playerRole;
+            player.team = playerTeam;
+            player.weapon1 = playerWeapon1;
+            player.weapon2 = playerWeapon2;
+            
+            // Update any placed markers for this player
+            updatePlacedPlayerInfo(playerId);
+        }
+    } else {
+        // Add new player
+        if (members.length >= MAX_PLAYERS) {
+            alert(`Maximum ${MAX_PLAYERS} players allowed!`);
+            return;
+        }
+        
+        const newId = members.length > 0 ? Math.max(...members.map(m => m.id)) + 1 : 1;
+        const newPlayer = {
+            id: newId,
+            name: playerName,
+            role: playerRole,
+            team: playerTeam,
+            weapon1: playerWeapon1,
+            weapon2: playerWeapon2
+        };
+        
+        members.push(newPlayer);
+    }
+    
+    // Save to localStorage
+    savePlayersToStorage();
+    
+    // Re-render lists
+    renderMemberList();
+    renderPlayerManagementList();
+    updateCounts();
+    
+    closePlayerEditModal();
+}
+
+function renderPlayerManagementList() {
+    playerManagementList.innerHTML = '';
+    
+    if (members.length === 0) {
+        playerManagementList.innerHTML = '<div class="no-players">No players yet. Add your first player!</div>';
+        return;
+    }
+    
+    members.forEach(member => {
+        const isPlaced = isPlayerPlaced(member.id);
+        
+        const playerItem = document.createElement('div');
+        playerItem.className = 'player-management-item';
+        if (isPlaced) {
+            playerItem.classList.add('placed');
+        }
+        
+        playerItem.innerHTML = `
+            <div class="player-management-info">
+                <div class="player-management-name">${member.name}</div>
+                <div class="player-management-details">
+                    <span class="role-badge-small role-${member.role}">${member.role}</span>
+                    <span class="team-badge-small">${member.team}</span>
+                    ${isPlaced ? '<span class="placed-badge">On Map</span>' : ''}
+                </div>
+                <div class="player-management-weapons">
+                    <small>⚔️ ${member.weapon1 || 'N/A'} | ${member.weapon2 || 'N/A'}</small>
+                </div>
+            </div>
+            <div class="player-management-actions">
+                <button class="btn-edit" onclick="openPlayerEditModal(${member.id})" title="Edit">✏️</button>
+                <button class="btn-delete" onclick="deletePlayer(${member.id})" title="Delete">🗑️</button>
+            </div>
+        `;
+        
+        playerManagementList.appendChild(playerItem);
+    });
+}
+
+function deletePlayer(playerId) {
+    const player = members.find(m => m.id === playerId);
+    if (!player) return;
+    
+    const isPlaced = isPlayerPlaced(playerId);
+    
+    let confirmMsg = `Are you sure you want to delete ${player.name}?`;
+    if (isPlaced) {
+        confirmMsg += '\n\nThis player is currently placed on the map and will be removed.';
+    }
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+    
+    // Remove from placed members
+    if (isPlaced) {
+        removeMemberMarker(playerId);
+        
+        // Remove from groups
+        placedGroups.forEach(group => {
+            const index = group.memberIds.indexOf(playerId);
+            if (index > -1) {
+                group.memberIds.splice(index, 1);
+                
+                const marker = mapArea.querySelector(`[data-group-id="${group.id}"]`);
+                if (marker) {
+                    if (group.memberIds.length === 0) {
+                        marker.remove();
+                        placedGroups = placedGroups.filter(g => g.id !== group.id);
+                    } else {
+                        updateGroupMarker(marker, group);
+                    }
+                }
+            }
+        });
+    }
+    
+    // Remove from members array
+    members = members.filter(m => m.id !== playerId);
+    
+    // Save and refresh
+    savePlayersToStorage();
+    savePositions();
+    renderMemberList();
+    renderPlayerManagementList();
+    updateCounts();
+}
+
+function updatePlacedPlayerInfo(playerId) {
+    // Update individual marker tooltips
+    const marker = mapArea.querySelector(`[data-member-id="${playerId}"]`);
+    if (marker) {
+        const member = members.find(m => m.id === playerId);
+        if (member) {
+            marker.className = `member-marker role-${member.role}`;
+            const tooltip = marker.querySelector('.marker-tooltip .tooltip-info');
+            if (tooltip) {
+                tooltip.textContent = `${member.role} | ${member.team}`;
+            }
+            const weaponsTooltip = marker.querySelector('.marker-tooltip .tooltip-weapons');
+            if (weaponsTooltip) {
+                weaponsTooltip.textContent = `⚔️ ${member.weapon1 || 'N/A'} | ${member.weapon2 || 'N/A'}`;
+            } else if (tooltip) {
+                // Add weapons tooltip if it doesn't exist
+                const weaponsDiv = document.createElement('div');
+                weaponsDiv.className = 'tooltip-weapons';
+                weaponsDiv.textContent = `⚔️ ${member.weapon1 || 'N/A'} | ${member.weapon2 || 'N/A'}`;
+                tooltip.parentElement.appendChild(weaponsDiv);
+            }
+        }
+    }
+    
+    // Update group markers that contain this player
+    placedGroups.forEach(group => {
+        if (group.memberIds.includes(playerId)) {
+            const groupMarker = mapArea.querySelector(`[data-group-id="${group.id}"]`);
+            if (groupMarker) {
+                updateGroupMarker(groupMarker, group);
+            }
+        }
+    });
+}
+
+function savePlayersToStorage() {
+    localStorage.setItem('vcross-gvg-players', JSON.stringify(members));
+}
+
+function loadPlayersFromStorage() {
+    const saved = localStorage.getItem('vcross-gvg-players');
+    if (saved) {
+        try {
+            const loadedMembers = JSON.parse(saved);
+            if (Array.isArray(loadedMembers) && loadedMembers.length > 0) {
+                members = loadedMembers;
+                renderMemberList();
+                updateCounts();
+            }
+        } catch (e) {
+            console.error('Error loading players:', e);
         }
     }
 }
