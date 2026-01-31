@@ -25,6 +25,7 @@ let drawingPaths = [];
 let drawingDeleteTimers = [];
 let drawingHistory = [];
 let drawingRedoStack = [];
+let drawingColor = '#ff0000'; // Default red color
 
 // Split UI State
 let activeSplitGroupId = null;
@@ -61,6 +62,7 @@ const clearDrawBtn = document.getElementById('clearDrawBtn');
 const undoDrawBtn = document.getElementById('undoDrawBtn');
 const redoDrawBtn = document.getElementById('redoDrawBtn');
 const autoDeleteToggle = document.getElementById('autoDeleteToggle');
+const drawColorPicker = document.getElementById('drawColorPicker');
 const drawingCanvas = document.getElementById('drawingCanvas');
 const ctx = drawingCanvas.getContext('2d');
 const addEnemiesBtn = document.getElementById('addEnemiesBtn');
@@ -326,6 +328,9 @@ function setupEventListeners() {
     undoDrawBtn.addEventListener('click', undoDrawing);
     redoDrawBtn.addEventListener('click', redoDrawing);
     autoDeleteToggle.addEventListener('change', handleAutoDeleteToggle);
+    drawColorPicker.addEventListener('change', (e) => {
+        drawingColor = e.target.value;
+    });
     
     // Enemy button
     addEnemiesBtn.addEventListener('click', addEnemies);
@@ -1260,7 +1265,7 @@ function initializeCanvas() {
         currentPath = [{ x, y }];
         
         // Start drawing immediately
-        ctx.strokeStyle = '#ff0000';
+        ctx.strokeStyle = drawingColor;
         ctx.lineWidth = 3;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -1293,7 +1298,7 @@ function initializeCanvas() {
             const pathData = {
                 points: [...currentPath],
                 timestamp: Date.now(),
-                color: '#ff0000',
+                color: drawingColor,
                 width: 3
             };
             
@@ -1342,7 +1347,7 @@ function initializeCanvas() {
         isDrawing = true;
         currentPath = [{ x, y }];
         
-        ctx.strokeStyle = '#ff0000';
+        ctx.strokeStyle = drawingColor;
         ctx.lineWidth = 3;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -1374,7 +1379,7 @@ function initializeCanvas() {
             const pathData = {
                 points: [...currentPath],
                 timestamp: Date.now(),
-                color: '#ff0000',
+                color: drawingColor,
                 width: 3
             };
             

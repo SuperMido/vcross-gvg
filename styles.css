@@ -1748,8 +1748,6 @@ header h1 {
     box-shadow: 0 8px 32px rgba(0,0,0,0.3);
     padding: 0;
     width: 220px;
-    max-height: 500px;
-    overflow-y: auto;
     opacity: 0;
     visibility: hidden;
     transform: translateY(20px);
@@ -1765,7 +1763,7 @@ header h1 {
 }
 
 .sidebar-header {
-    padding: 15px;
+    padding: 12px 15px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border-radius: 8px 8px 0 0;
@@ -1775,7 +1773,7 @@ header h1 {
 }
 
 .sidebar-header h3 {
-    font-size: 16px;
+    font-size: 15px;
     margin: 0;
 }
 
@@ -1800,14 +1798,14 @@ header h1 {
 }
 
 .sidebar-buttons {
-    padding: 15px;
+    padding: 10px 15px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .sidebar-btn {
-    padding: 12px;
+    padding: 10px;
     border: 2px solid #ddd;
     background: white;
     border-radius: 8px;
@@ -1815,8 +1813,8 @@ header h1 {
     transition: all 0.3s;
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 14px;
+    gap: 8px;
+    font-size: 13px;
     font-weight: 500;
     color: #333;
 }
@@ -1833,13 +1831,13 @@ header h1 {
 }
 
 .sidebar-btn .btn-icon {
-    font-size: 20px;
+    font-size: 18px;
     line-height: 1;
 }
 
 .sidebar-btn .btn-icon-img {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     object-fit: contain;
 }
 
@@ -1858,8 +1856,8 @@ header h1 {
 }
 
 .sidebar-section-title {
-    padding: 10px 15px 5px 15px;
-    font-size: 13px;
+    padding: 8px 15px 5px 15px;
+    font-size: 12px;
     font-weight: 600;
     color: #666;
     text-transform: uppercase;
@@ -1867,7 +1865,46 @@ header h1 {
 }
 
 .sidebar-toggle-option {
-    padding: 15px;
+    padding: 10px 15px;
+}
+
+.sidebar-color-picker {
+    padding: 8px 15px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #e1e8ed;
+}
+
+.color-picker-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.color-picker-text {
+    font-size: 12px;
+    color: #555;
+    font-weight: 500;
+}
+
+#drawColorPicker {
+    width: 50px;
+    height: 30px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 2px;
+}
+
+#drawColorPicker::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+#drawColorPicker::-webkit-color-swatch {
+    border: none;
+    border-radius: 3px;
 }
 
 .toggle-label-small {
@@ -2217,6 +2254,23 @@ body.dark-theme .remove-split-member:hover {
 
 body.dark-theme .toggle-label-small {
     color: #e0e0e0;
+}
+
+body.dark-theme .toggle-text-small {
+    color: #e0e0e0;
+}
+
+body.dark-theme .color-picker-text {
+    color: #e0e0e0;
+}
+
+body.dark-theme #drawColorPicker {
+    border-color: #533483;
+    background: #1a1a2e;
+}
+
+body.dark-theme .sidebar-color-picker {
+    border-bottom-color: #533483;
 }
 
 body.dark-theme .sidebar-divider {
