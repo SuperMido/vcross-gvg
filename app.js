@@ -1,33 +1,46 @@
-// Application state
+// ============================================================================
+// APPLICATION STATE & CONFIGURATION
+// ============================================================================
+
+// Placed items on map
 let placedMembers = [];
-let placedGroups = []; // Store group placements
-let placedObjectives = []; // Store objective markers
-let placedBosses = []; // Store boss markers
-let placedTowers = []; // Store tower markers
-let placedTrees = []; // Store tree markers
-let placedEnemies = []; // Store enemy markers
+let placedGroups = [];
+let placedObjectives = [];
+let placedBosses = [];
+let placedTowers = [];
+let placedTrees = [];
+let placedEnemies = [];
+
+// UI State
 let filteredMembers = [...members];
 let currentFilter = 'all';
 let currentRoleFilter = 'all';
 let currentView = 'grouped'; // 'grouped' or 'list'
 let placingMode = null; // 'objective' or 'boss' or 'tower' or 'tree' or null
+
+// Drawing State
 let drawingMode = false;
 let autoDeleteDrawings = false;
-let drawingPaths = []; // Store drawing paths with timestamps
-let drawingDeleteTimers = []; // Store timers for auto-delete
-let drawingHistory = []; // Store history for undo
-let drawingRedoStack = []; // Store redo stack
-let activeSplitGroupId = null; // Track which group has split view open
+let drawingPaths = [];
+let drawingDeleteTimers = [];
+let drawingHistory = [];
+let drawingRedoStack = [];
+
+// Split UI State
+let activeSplitGroupId = null;
+
+// Constants
 const MAX_PLAYERS = 30;
 const MAX_ENEMIES = 30;
 const ENEMIES_PER_CLICK = 5;
-const GROUP_MERGE_DISTANCE = 80; // pixels - distance to auto-merge groups (reduced from 100)
-const AUTO_DELETE_DELAY = 10000; // 10 seconds
-
-// Team order for display
+const GROUP_MERGE_DISTANCE = 80;
+const AUTO_DELETE_DELAY = 10000;
 const TEAM_ORDER = ['FrontLine', 'Jungle', 'Defence 1', 'Defence 2', 'Backline 1', 'Backline 2'];
 
-// DOM elements
+// ============================================================================
+// DOM ELEMENT REFERENCES
+// ============================================================================
+
 const memberList = document.getElementById('memberList');
 const mapArea = document.getElementById('mapArea');
 const searchInput = document.getElementById('searchInput');
@@ -60,7 +73,10 @@ const playerManagementList = document.getElementById('playerManagementList');
 const playerEditForm = document.getElementById('playerEditForm');
 const cancelEditBtn = document.getElementById('cancelEditBtn');
 
-// Initialize the application
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
 function init() {
     loadPlayersFromStorage();
     renderMemberList();
@@ -72,10 +88,9 @@ function init() {
     setupPlayerManagementHandlers();
 }
 
-// Load map image if exists
-function loadMapImage() {
-    // Map is already set in CSS using image.png
-}
+// ============================================================================
+// MEMBER LIST RENDERING
+// ============================================================================
 
 // Render member list
 function renderMemberList() {
@@ -207,26 +222,9 @@ function createMemberElement(member) {
     return div;
 }
 
-// Drag handlers for member list
-function handleDragStart(e) {
-    e.currentTarget.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'copy';
-    e.dataTransfer.setData('text/plain', e.currentTarget.dataset.memberId);
-    e.dataTransfer.setData('type', 'member');
-}
-
-// Handle team group drag
-function handleTeamDragStart(e) {
-    e.stopPropagation();
-    e.currentTarget.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'copy';
-    e.dataTransfer.setData('text/plain', e.currentTarget.dataset.teamName);
-    e.dataTransfer.setData('type', 'team');
-}
-
-function handleDragEnd(e) {
-    e.currentTarget.classList.remove('dragging');
-}
+// ============================================================================
+// EVENT HANDLERS & SETUP
+// ============================================================================
 
 // Setup event listeners
 function setupEventListeners() {
@@ -273,6 +271,31 @@ function setupEventListeners() {
     
     // Window resize
     window.addEventListener('resize', resizeCanvas);
+}
+
+// ============================================================================
+// DRAG & DROP HANDLERS
+// ============================================================================
+
+// Drag handlers for member list
+function handleDragStart(e) {
+    e.currentTarget.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('text/plain', e.currentTarget.dataset.memberId);
+    e.dataTransfer.setData('type', 'member');
+}
+
+// Handle team group drag
+function handleTeamDragStart(e) {
+    e.stopPropagation();
+    e.currentTarget.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('text/plain', e.currentTarget.dataset.teamName);
+    e.dataTransfer.setData('type', 'team');
+}
+
+function handleDragEnd(e) {
+    e.currentTarget.classList.remove('dragging');
 }
 
 // Map drag over
@@ -382,6 +405,10 @@ function getTotalPlacedPlayers() {
     });
     return total;
 }
+
+// ============================================================================
+// MAP PLACEMENT - TEAMS & MEMBERS
+// ============================================================================
 
 // Place team group on map
 function placeTeamGroupOnMap(teamName, x, y) {
@@ -759,6 +786,10 @@ function handleMapClick(e) {
     }
 }
 
+// ============================================================================
+// MAP PLACEMENT - OBJECTIVE MARKERS (RED DOTS, BOSSES, TOWERS, TREES)
+// ============================================================================
+
 // Place objective marker
 function placeObjectiveMarker(x, y) {
     const objectiveId = `objective-${Date.now()}`;
@@ -801,7 +832,7 @@ function placeBossMarker(x, y) {
     marker.draggable = true;
     
     marker.innerHTML = `
-        <img src="boss.png" alt="Boss" draggable="false">
+        <img src="images/boss.png" alt="Boss" draggable="false">
         <button class="remove-btn" onclick="removeBossMarker('${bossId}')">×</button>
     `;
     
@@ -906,7 +937,7 @@ function placeTowerMarker(x, y) {
     marker.draggable = true;
     
     marker.innerHTML = `
-        <img src="tower.png" alt="Tower" draggable="false">
+        <img src="images/tower.png" alt="Tower" draggable="false">
         <button class="remove-btn" onclick="removeTowerMarker('${towerId}')">×</button>
     `;
     
@@ -1029,6 +1060,10 @@ function removeTreeMarker(treeId) {
     savePositions();
     updatePlaceholder();
 }
+
+// ============================================================================
+// ENEMY SYSTEM
+// ============================================================================
 
 // Add enemies to the map
 function addEnemies() {
@@ -1306,6 +1341,10 @@ function resizeCanvas() {
     redrawAllPaths();
 }
 
+// ============================================================================
+// DRAWING SYSTEM
+// ============================================================================
+
 // Draw a single path
 function drawPath(points, color, width) {
     if (points.length < 2) return;
@@ -1528,6 +1567,11 @@ function schedulePathDeletion(index, delay = AUTO_DELETE_DELAY) {
     
     drawingDeleteTimers.push(timer);
 }
+
+// ============================================================================
+// SPLIT MEMBER FEATURE
+// ============================================================================
+
 // Toggle split member view
 function toggleSplitView(groupId) {
     const splitDiv = document.getElementById(`split-${groupId}`);
@@ -1804,6 +1848,10 @@ function updatePlaceholder() {
     }
 }
 
+// ============================================================================
+// DATA PERSISTENCE & EXPORT
+// ============================================================================
+
 // Export positions
 function exportPositions() {
     const totalPlaced = getTotalPlacedPlayers();
@@ -2046,6 +2094,10 @@ function setupPlayerManagementHandlers() {
     playerEditForm.addEventListener('submit', handlePlayerFormSubmit);
 }
 
+// ============================================================================
+// PLAYER MANAGEMENT (CRUD Operations)
+// ============================================================================
+
 function openPlayerManagementModal() {
     renderPlayerManagementList();
     playerManagementModal.style.display = 'flex';
@@ -2284,6 +2336,10 @@ function updatePlacedPlayerInfo(playerId) {
         }
     });
 }
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
 
 function savePlayersToStorage() {
     localStorage.setItem('vcross-gvg-players', JSON.stringify(members));
