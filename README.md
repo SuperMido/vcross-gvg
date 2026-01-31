@@ -1,10 +1,10 @@
-# vCross-GVG - When Wind Meets Guild War Strategy Tool
+# VCross-GVG - Where Winds Meet Guild War Strategy Tool
 
-A drag-and-drop interface for planning Guild vs Guild battle strategies in "When Wind Meets".
+A drag-and-drop interface for planning Guild vs Guild battle strategies in "Where Winds Meet".
 
 ## Game Context
 
-**When Wind Meets** is a game where guilds battle against each other. This tool helps you plan your battle strategy by visually positioning your guild members on the battle map.
+**Where Winds Meet** is a game where guilds battle against each other. This tool helps you plan your battle strategy by visually positioning your guild members on the battle map.
 
 ## Features
 
