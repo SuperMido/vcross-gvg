@@ -33,6 +33,12 @@ header h1 {
     opacity: 0.9;
 }
 
+.copyright {
+    font-size: 0.85rem;
+    opacity: 0.8;
+    font-style: italic;
+}
+
 .main-content {
     display: grid;
     grid-template-columns: 350px 1fr;
@@ -2331,3 +2337,4 @@ body.dark-theme .btn-danger:hover {
 body.dark-theme #confirmModalMessage {
     color: #e0e0e0;
 }
+
