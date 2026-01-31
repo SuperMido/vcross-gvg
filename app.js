@@ -82,6 +82,8 @@ const confirmModalTitle = document.getElementById('confirmModalTitle');
 const confirmModalMessage = document.getElementById('confirmModalMessage');
 const confirmOkBtn = document.getElementById('confirmOkBtn');
 const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+const hotkeyHelpModal = document.getElementById('hotkeyHelpModal');
+const closeHotkeyModalBtn = document.getElementById('closeHotkeyModalBtn');
 
 // ============================================================================
 // CUSTOM CONFIRM DIALOG
@@ -274,26 +276,19 @@ function setupEventListeners() {
     const togglePanelBtn = document.getElementById('togglePanelBtn');
     togglePanelBtn.addEventListener('click', togglePanel);
     
-    // Sidebar toggle button
-    const toggleToolsBtn = document.getElementById('toggleToolsBtn');
-    const toolsPanel = document.getElementById('toolsPanel');
+    // Menu dropdown toggle
+    const menuBtn = document.getElementById('menuBtn');
+    const menuContent = document.getElementById('menuContent');
     
-    toggleToolsBtn.addEventListener('click', () => {
-        toolsPanel.classList.toggle('show');
+    menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menuContent.classList.toggle('show');
     });
     
-    // Close sidebar panel
-    document.querySelectorAll('.sidebar-close-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const target = e.target.dataset.target;
-            document.getElementById(target).classList.remove('show');
-        });
-    });
-    
-    // Close sidebar when clicking outside
+    // Close menu when clicking outside
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('.sidebar-toolbar')) {
-            toolsPanel.classList.remove('show');
+        if (!e.target.closest('.menu-dropdown')) {
+            menuContent.classList.remove('show');
         }
     });
     
@@ -345,12 +340,119 @@ function setupEventListeners() {
     importBtn.addEventListener('click', importPositions);
     importFileInput.addEventListener('change', handleImportFile);
     
+    // Hot Key button
+    const hotKeyBtn = document.getElementById('hotKeyBtn');
+    hotKeyBtn.addEventListener('click', showHotkeyHelp);
+    
     // Theme toggle button
     themeToggleBtn.addEventListener('click', toggleTheme);
     
     // Window resize
     window.addEventListener('resize', resizeCanvas);
+    
+    // Hotkey modal
+    closeHotkeyModalBtn.addEventListener('click', closeHotkeyHelp);
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', handleKeyboardShortcut);
 }
+
+// ============================================================================
+// KEYBOARD SHORTCUTS
+// ============================================================================
+
+function handleKeyboardShortcut(e) {
+    // Ignore shortcuts when typing in input fields
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+        return;
+    }
+    
+    // Shift + ? - Show hotkey help
+    if (e.shiftKey && e.key === '?') {
+        e.preventDefault();
+        showHotkeyHelp();
+        return;
+    }
+    
+    // Escape - Deselect tool
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        deactivatePlacingMode();
+        if (drawingMode) {
+            toggleDrawingMode();
+        }
+        return;
+    }
+    
+    // Ctrl + Z - Undo drawing
+    if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        if (!autoDeleteDrawings && drawingHistory.length > 0) {
+            undoDrawing();
+        }
+        return;
+    }
+    
+    // Ctrl + Y - Redo drawing
+    if (e.ctrlKey && e.key === 'y') {
+        e.preventDefault();
+        if (!autoDeleteDrawings && drawingRedoStack.length > 0) {
+            redoDrawing();
+        }
+        return;
+    }
+    
+    // Single key shortcuts
+    const key = e.key.toLowerCase();
+    
+    switch(key) {
+        case 'o':
+            e.preventDefault();
+            toggleObjectiveMode();
+            break;
+        case 'b':
+            e.preventDefault();
+            toggleBossMode();
+            break;
+        case 't':
+            e.preventDefault();
+            toggleTowerMode();
+            break;
+        case 'e':
+            e.preventDefault();
+            toggleTreeMode();
+            break;
+        case 'd':
+            e.preventDefault();
+            toggleDrawingMode();
+            break;
+    }
+}
+
+function showHotkeyHelp() {
+    hotkeyHelpModal.style.display = 'flex';
+}
+
+function closeHotkeyHelp() {
+    hotkeyHelpModal.style.display = 'none';
+}
+
+// Click outside modal to close
+hotkeyHelpModal.addEventListener('click', (e) => {
+    if (e.target === hotkeyHelpModal) {
+        closeHotkeyHelp();
+    }
+});
+
+function deactivatePlacingMode() {
+    placingMode = null;
+    addObjectiveBtn.classList.remove('active');
+    addBossBtn.classList.remove('active');
+    addTowerBtn.classList.remove('active');
+    addTreeBtn.classList.remove('active');
+    mapArea.style.cursor = 'default';
+}
+
 
 // ============================================================================
 // DRAG & DROP HANDLERS
@@ -2642,6 +2744,23 @@ function setupPlayerManagementHandlers() {
     
     // Form submission
     playerEditForm.addEventListener('submit', handlePlayerFormSubmit);
+    
+    // Guild Manager toggle
+    const guildmanagerToggle = document.getElementById('guildmanagerToggle');
+    const guildmanagerSection = document.getElementById('guildmanagerSection');
+    const importGuildmanagerBtn = document.getElementById('importGuildmanagerBtn');
+    
+    guildmanagerToggle.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            guildmanagerSection.style.display = 'block';
+            addNewPlayerBtn.style.display = 'none';
+        } else {
+            guildmanagerSection.style.display = 'none';
+            addNewPlayerBtn.style.display = 'block';
+        }
+    });
+    
+    importGuildmanagerBtn.addEventListener('click', importFromGuildManager);
 }
 
 // ============================================================================
@@ -2885,6 +3004,141 @@ function updatePlacedPlayerInfo(playerId) {
             }
         }
     });
+}
+
+// ============================================================================
+// GUILD MANAGER IMPORT
+// ============================================================================
+
+async function importFromGuildManager() {
+    const urlInput = document.getElementById('guildmanagerUrl');
+    const cookieInput = document.getElementById('guildmanagerCookie');
+    const statusDiv = document.getElementById('guildmanagerStatus');
+    const importBtn = document.getElementById('importGuildmanagerBtn');
+    
+    const url = urlInput.value.trim();
+    const cookie = cookieInput.value.trim();
+    
+    // Validate inputs
+    if (!url) {
+        showStatus('error', 'Please enter a Guild Manager URL');
+        return;
+    }
+    
+    if (!cookie) {
+        showStatus('error', 'Please enter your authentication cookie');
+        return;
+    }
+    
+    // Show loading state
+    showStatus('loading', 'Fetching data from Guild Manager...');
+    importBtn.disabled = true;
+    
+    try {
+        // Use a CORS proxy to fetch the data
+        const response = await fetch(url, {
+            headers: {
+                'Cookie': cookie,
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch data. Please check your URL and cookie.');
+        }
+        
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        // Parse the data
+        const importedPlayers = parseGuildManagerHTML(doc);
+        
+        if (importedPlayers.length === 0) {
+            showStatus('error', 'No players found. Please check the page structure.');
+            return;
+        }
+        
+        // Clear existing players and add imported ones
+        members = importedPlayers;
+        savePlayersToStorage();
+        renderMemberList();
+        renderPlayerManagementList();
+        updateCounts();
+        
+        showStatus('success', `Successfully imported ${importedPlayers.length} players!`);
+        
+        // Reset after success
+        setTimeout(() => {
+            document.getElementById('guildmanagerToggle').checked = false;
+            document.getElementById('guildmanagerSection').style.display = 'none';
+            addNewPlayerBtn.style.display = 'block';
+            statusDiv.innerHTML = '';
+        }, 3000);
+        
+    } catch (error) {
+        console.error('Guild Manager import error:', error);
+        showStatus('error', `Error: ${error.message}. Note: Direct fetching may be blocked by CORS. Try using browser extension or manual copy.`);
+    } finally {
+        importBtn.disabled = false;
+    }
+    
+    function showStatus(type, message) {
+        statusDiv.className = `import-status ${type}`;
+        statusDiv.textContent = message;
+    }
+}
+
+function parseGuildManagerHTML(doc) {
+    const players = [];
+    const teamMap = {
+        'front line': 'FrontLine',
+        'frontline': 'FrontLine',
+        'jungle': 'Jungle',
+        'defense 1': 'Defence 1',
+        'defence 1': 'Defence 1',
+        'defense 2': 'Defence 2',
+        'defence 2': 'Defence 2',
+        'backline 1': 'Backline 1',
+        'back line 1': 'Backline 1',
+        'backline 2': 'Backline 2',
+        'back line 2': 'Backline 2'
+    };
+    
+    // Find all team groups
+    const teamCards = doc.querySelectorAll('[data-slot="card-header"]');
+    
+    teamCards.forEach((teamHeader) => {
+        // Get team name
+        const teamNameElement = teamHeader.querySelector('h3, .text-white');
+        if (!teamNameElement) return;
+        
+        const teamNameRaw = teamNameElement.textContent.trim().toLowerCase();
+        const teamName = teamMap[teamNameRaw] || 'FrontLine';
+        
+        // Find the parent card to get players
+        const card = teamHeader.closest('[data-slot="base"]') || teamHeader.parentElement;
+        if (!card) return;
+        
+        // Find all player names in this team
+        const playerElements = card.querySelectorAll('.shrink-0.truncate.text-xs.font-medium.text-white');
+        
+        playerElements.forEach((playerEl) => {
+            const playerName = playerEl.textContent.trim();
+            if (playerName && playerName.length > 0) {
+                players.push({
+                    id: Date.now() + Math.random(),
+                    name: playerName,
+                    role: 'DPS', // Default role, can be customized later
+                    team: teamName,
+                    weapon1: 'Nameless Sword',
+                    weapon2: 'Nameless Spear'
+                });
+            }
+        });
+    });
+    
+    return players;
 }
 
 // ============================================================================

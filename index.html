@@ -11,9 +11,22 @@
         <header>
             <h1>Where Winds Meet - Guild War Strategy</h1>
             <p class="subtitle">Guild vs Guild Battle Map (Max 30 Players) • <span class="copyright">Created by Mido from <a href="https://discord.gg/vcross" target="_blank" class="vcross-link">VCross</a></span></p>
-            <button id="themeToggleBtn" class="theme-toggle-btn" title="Toggle Dark/Light Theme">
-                <span class="theme-icon">🌙</span>
-            </button>
+            <div class="header-buttons">
+                <button id="themeToggleBtn" class="theme-toggle-btn" title="Toggle Dark/Light Theme">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                <div class="menu-dropdown">
+                    <button id="menuBtn" class="menu-btn" title="Menu">
+                        <span class="menu-icon">☰</span>
+                    </button>
+                    <div class="menu-content" id="menuContent">
+                        <button id="exportBtn" class="menu-item">📥 Export Strategy</button>
+                        <button id="importBtn" class="menu-item">📤 Import Strategy</button>
+                        <button id="hotKeyBtn" class="menu-item">⌨️ Hot Keys</button>
+                    </div>
+                </div>
+            </div>
+            <input type="file" id="importFileInput" accept=".json" style="display: none;">
         </header>
         
         <div class="main-content">
@@ -53,90 +66,62 @@
             <div class="map-panel">
                 <h2>Battle Map <span id="placedCount">(0/30 Placed)</span></h2>
                 
-                <!-- Collapsible Tools Toolbar (Bottom Right) -->
-                <div class="sidebar-toolbar sidebar-bottom-right" id="toolsToolbar">
-                    <button class="sidebar-toggle-btn" id="toggleToolsBtn" title="Tools">
-                        <span class="sidebar-icon">🛠️</span>
-                    </button>
-                    <div class="sidebar-panel" id="toolsPanel">
-                        <div class="sidebar-header">
-                            <h3>Tools</h3>
-                            <button class="sidebar-close-btn" data-target="toolsPanel">✕</button>
-                        </div>
-                        
-                        <!-- Objects Section -->
-                        <div class="sidebar-section">
-                            <div class="sidebar-section-title">Objects</div>
-                            <div class="sidebar-buttons">
-                                <button id="addObjectiveBtn" class="sidebar-btn objective-btn" title="Add Objective Marker">
-                                    <span class="btn-icon">🎯</span>
-                                    <span class="btn-label">Objective</span>
-                                </button>
-                                <button id="addBossBtn" class="sidebar-btn boss-btn" title="Add Boss Marker">
-                                    <img src="images/boss.png" alt="Boss" class="btn-icon-img">
-                                    <span class="btn-label">Boss</span>
-                                </button>
-                                <button id="addTowerBtn" class="sidebar-btn tower-btn" title="Add Tower Marker">
-                                    <img src="images/tower.png" alt="Tower" class="btn-icon-img">
-                                    <span class="btn-label">Tower</span>
-                                </button>
-                                <button id="addTreeBtn" class="sidebar-btn tree-btn" title="Add Tree Marker">
-                                    <span class="btn-icon">🌳</span>
-                                    <span class="btn-label">Tree</span>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="sidebar-divider"></div>
-                        
-                        <!-- Drawing Section -->
-                        <div class="sidebar-section">
-                            <div class="sidebar-section-title">Drawing</div>
-                            <div class="sidebar-buttons">
-                                <button id="drawBtn" class="sidebar-btn draw-btn" title="Toggle Draw Mode">
-                                    <span class="btn-icon">✏️</span>
-                                    <span class="btn-label">Draw</span>
-                                </button>
-                                <button id="undoDrawBtn" class="sidebar-btn undo-btn" title="Undo Drawing" disabled>
-                                    <span class="btn-icon">↶</span>
-                                    <span class="btn-label">Undo</span>
-                                </button>
-                                <button id="redoDrawBtn" class="sidebar-btn redo-btn" title="Redo Drawing" disabled>
-                                    <span class="btn-icon">↷</span>
-                                    <span class="btn-label">Redo</span>
-                                </button>
-                                <button id="clearDrawBtn" class="sidebar-btn clear-draw-btn" title="Clear All Drawings">
-                                    <span class="btn-icon">🗑️</span>
-                                    <span class="btn-label">Clear All</span>
-                                </button>
-                            </div>
-                            <div class="sidebar-color-picker">
-                                <label for="drawColorPicker" class="color-picker-label">
-                                    <span class="color-picker-text">Draw Color:</span>
-                                    <input type="color" id="drawColorPicker" value="#ff0000" title="Choose drawing color">
-                                </label>
-                            </div>
-                            <div class="sidebar-toggle-option">
-                                <label class="toggle-label-small">
-                                    <input type="checkbox" id="autoDeleteToggle" />
-                                    <span class="toggle-slider-small"></span>
-                                    <span class="toggle-text-small">Auto-delete after 10s</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
                 <div id="mapArea" class="map-area">
                     <canvas id="drawingCanvas" class="drawing-canvas"></canvas>
                     <div class="map-placeholder">
                         <p class="instruction">Drag players from the list to place them on the battle map</p>
                     </div>
                 </div>
-                <div class="map-controls">
-                    <button id="clearMapBtn">Clear All Placements</button>
-                    <button id="exportBtn">Export Strategy</button>
-                    <button id="importBtn">Import Strategy</button>
-                    <input type="file" id="importFileInput" accept=".json" style="display: none;">
+                
+                <!-- Tools Toolbar at Bottom -->
+                <div class="bottom-toolbar" id="toolsToolbar">
+                    <div class="toolbar-buttons">
+                        <button id="addObjectiveBtn" class="toolbar-btn objective-btn" title="Add Objective Marker">
+                            <span class="btn-icon">🎯</span>
+                        </button>
+                        <button id="addBossBtn" class="toolbar-btn boss-btn" title="Add Boss Marker">
+                            <img src="images/boss.png" alt="Boss" class="btn-icon-img">
+                        </button>
+                        <button id="addTowerBtn" class="toolbar-btn tower-btn" title="Add Tower Marker">
+                            <img src="images/tower.png" alt="Tower" class="btn-icon-img">
+                        </button>
+                        <button id="addTreeBtn" class="toolbar-btn tree-btn" title="Add Tree Marker">
+                            <span class="btn-icon">🌳</span>
+                        </button>
+                        
+                        <div class="toolbar-divider"></div>
+                        
+                        <button id="drawBtn" class="toolbar-btn draw-btn" title="Toggle Draw Mode">
+                            <span class="btn-icon">✏️</span>
+                        </button>
+                        <div class="toolbar-color-picker">
+                            <label for="drawColorPicker" class="color-picker-label" title="Choose Drawing Color">
+                                <input type="color" id="drawColorPicker" value="#ff0000">
+                            </label>
+                        </div>
+                        <button id="undoDrawBtn" class="toolbar-btn undo-btn" title="Undo Drawing" disabled>
+                            <span class="btn-icon">↶</span>
+                        </button>
+                        <button id="redoDrawBtn" class="toolbar-btn redo-btn" title="Redo Drawing" disabled>
+                            <span class="btn-icon">↷</span>
+                        </button>
+                        <button id="clearDrawBtn" class="toolbar-btn clear-draw-btn" title="Clear All Drawings">
+                            <span class="btn-icon">🧹</span>
+                        </button>
+                        <div class="toolbar-toggle-option">
+                            <label class="toggle-label-small" title="Auto-delete drawings after 10 seconds">
+                                <input type="checkbox" id="autoDeleteToggle" />
+                                <span class="toggle-slider-small"></span>
+                                <span class="toggle-text-small">Auto-delete</span>
+                            </label>
+                        </div>
+                        
+                        <div class="toolbar-divider"></div>
+                        
+                        <button id="clearMapBtn" class="toolbar-btn clear-btn" title="Clear All Placements">
+                            <span class="btn-icon">❌</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -152,7 +137,32 @@
             <div class="modal-body">
                 <div class="modal-toolbar">
                     <button id="addNewPlayerBtn" class="btn-primary">+ Add New Player</button>
+                    <div class="guildmanager-toggle">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="guildmanagerToggle" />
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-text">Enable Guild Manager Import</span>
+                        </label>
+                    </div>
                 </div>
+                
+                <!-- Guild Manager Import Section -->
+                <div id="guildmanagerSection" class="guildmanager-section" style="display: none;">
+                    <div class="guildmanager-form">
+                        <div class="form-group">
+                            <label for="guildmanagerUrl">Guild Manager URL:</label>
+                            <input type="text" id="guildmanagerUrl" placeholder="https://guildmanager.app/g/.../activities/.../parties" class="input-full">
+                        </div>
+                        <div class="form-group">
+                            <label for="guildmanagerCookie">Authentication Cookie:</label>
+                            <textarea id="guildmanagerCookie" placeholder="Paste your session cookie here..." rows="3" class="input-full"></textarea>
+                            <small class="help-text">To get your cookie: Open browser DevTools (F12) → Application tab → Cookies → Copy session cookie value</small>
+                        </div>
+                        <button id="importGuildmanagerBtn" class="btn-primary">Import from Guild Manager</button>
+                        <div id="guildmanagerStatus" class="import-status"></div>
+                    </div>
+                </div>
+                
                 <div class="player-management-list" id="playerManagementList">
                     <!-- Players will be rendered here -->
                 </div>
@@ -253,11 +263,57 @@
         </div>
     </div>
     
+    <!-- Hotkey Help Modal -->
+    <div id="hotkeyHelpModal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>Keyboard Shortcuts</h2>
+                <button class="modal-close" id="closeHotkeyModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="hotkey-list">
+                    <div class="hotkey-item">
+                        <span class="hotkey-key">Shift + ?</span>
+                        <span class="hotkey-desc">Show this help</span>
+                    </div>
+                    <div class="hotkey-item">
+                        <span class="hotkey-key">O</span>
+                        <span class="hotkey-desc">Add Objective</span>
+                    </div>
+                    <div class="hotkey-item">
+                        <span class="hotkey-key">B</span>
+                        <span class="hotkey-desc">Add Boss</span>
+                    </div>
+                    <div class="hotkey-item">
+                        <span class="hotkey-key">T</span>
+                        <span class="hotkey-desc">Add Tower</span>
+                    </div>
+                    <div class="hotkey-item">
+                        <span class="hotkey-key">E</span>
+                        <span class="hotkey-desc">Add Tree</span>
+                    </div>
+                    <div class="hotkey-item">
+                        <span class="hotkey-key">D</span>
+                        <span class="hotkey-desc">Toggle Draw Mode</span>
+                    </div>
+                    <div class="hotkey-item">
+                        <span class="hotkey-key">Ctrl + Z</span>
+                        <span class="hotkey-desc">Undo Drawing</span>
+                    </div>
+                    <div class="hotkey-item">
+                        <span class="hotkey-key">Ctrl + Y</span>
+                        <span class="hotkey-desc">Redo Drawing</span>
+                    </div>
+                    <div class="hotkey-item">
+                        <span class="hotkey-key">Esc</span>
+                        <span class="hotkey-desc">Deselect Tool</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <script src="data.js"></script>
     <script src="app.js"></script>
-    
-    <footer class="copyright-footer">
-        <p>© 2026 Mido from VCross</p>
-    </footer>
 </body>
 </html>
