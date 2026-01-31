@@ -48,6 +48,8 @@ const roleFilterButtons = document.querySelectorAll('.role-filter-btn');
 const viewToggleButtons = document.querySelectorAll('.view-toggle-btn');
 const clearMapBtn = document.getElementById('clearMapBtn');
 const exportBtn = document.getElementById('exportBtn');
+const importBtn = document.getElementById('importBtn');
+const importFileInput = document.getElementById('importFileInput');
 const playerCount = document.getElementById('playerCount');
 const placedCount = document.getElementById('placedCount');
 const addObjectiveBtn = document.getElementById('addObjectiveBtn');
@@ -72,6 +74,43 @@ const addNewPlayerBtn = document.getElementById('addNewPlayerBtn');
 const playerManagementList = document.getElementById('playerManagementList');
 const playerEditForm = document.getElementById('playerEditForm');
 const cancelEditBtn = document.getElementById('cancelEditBtn');
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+const confirmModal = document.getElementById('confirmModal');
+const confirmModalTitle = document.getElementById('confirmModalTitle');
+const confirmModalMessage = document.getElementById('confirmModalMessage');
+const confirmOkBtn = document.getElementById('confirmOkBtn');
+const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+
+// ============================================================================
+// CUSTOM CONFIRM DIALOG
+// ============================================================================
+
+function showConfirm(title, message) {
+    return new Promise((resolve) => {
+        confirmModalTitle.textContent = title;
+        confirmModalMessage.textContent = message;
+        confirmModal.style.display = 'flex';
+        
+        const handleOk = () => {
+            cleanup();
+            resolve(true);
+        };
+        
+        const handleCancel = () => {
+            cleanup();
+            resolve(false);
+        };
+        
+        const cleanup = () => {
+            confirmModal.style.display = 'none';
+            confirmOkBtn.removeEventListener('click', handleOk);
+            confirmCancelBtn.removeEventListener('click', handleCancel);
+        };
+        
+        confirmOkBtn.addEventListener('click', handleOk);
+        confirmCancelBtn.addEventListener('click', handleCancel);
+    });
+}
 
 // ============================================================================
 // INITIALIZATION
@@ -79,6 +118,7 @@ const cancelEditBtn = document.getElementById('cancelEditBtn');
 
 function init() {
     loadPlayersFromStorage();
+    loadThemePreference();
     renderMemberList();
     setupEventListeners();
     loadSavedPositions();
@@ -228,6 +268,33 @@ function createMemberElement(member) {
 
 // Setup event listeners
 function setupEventListeners() {
+    // Panel toggle button
+    const togglePanelBtn = document.getElementById('togglePanelBtn');
+    togglePanelBtn.addEventListener('click', togglePanel);
+    
+    // Sidebar toggle button
+    const toggleToolsBtn = document.getElementById('toggleToolsBtn');
+    const toolsPanel = document.getElementById('toolsPanel');
+    
+    toggleToolsBtn.addEventListener('click', () => {
+        toolsPanel.classList.toggle('show');
+    });
+    
+    // Close sidebar panel
+    document.querySelectorAll('.sidebar-close-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const target = e.target.dataset.target;
+            document.getElementById(target).classList.remove('show');
+        });
+    });
+    
+    // Close sidebar when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.sidebar-toolbar')) {
+            toolsPanel.classList.remove('show');
+        }
+    });
+    
     // Map area drop events
     mapArea.addEventListener('dragover', handleDragOver);
     mapArea.addEventListener('dragleave', handleDragLeave);
@@ -268,6 +335,13 @@ function setupEventListeners() {
     
     // Export button
     exportBtn.addEventListener('click', exportPositions);
+    
+    // Import button
+    importBtn.addEventListener('click', importPositions);
+    importFileInput.addEventListener('change', handleImportFile);
+    
+    // Theme toggle button
+    themeToggleBtn.addEventListener('click', toggleTheme);
     
     // Window resize
     window.addEventListener('resize', resizeCanvas);
@@ -316,11 +390,6 @@ function handleDragLeave(e) {
 function handleDrop(e) {
     e.preventDefault();
     mapArea.classList.remove('drag-over');
-    
-    // If in placing mode, ignore drops
-    if (placingMode) {
-        return;
-    }
     
     const type = e.dataTransfer.getData('type');
     const data = e.dataTransfer.getData('text/plain');
@@ -1807,12 +1876,17 @@ function applyFilters(searchTerm = '') {
 }
 
 // Clear all placements
-function clearAllPlacements() {
+async function clearAllPlacements() {
     const totalPlaced = getTotalPlacedPlayers();
     const totalMarkers = placedObjectives.length + placedBosses.length + placedTowers.length + placedTrees.length + placedEnemies.length;
     if (totalPlaced === 0 && totalMarkers === 0) return;
     
-    if (confirm('Are you sure you want to remove all players and markers from the map?')) {
+    const confirmed = await showConfirm(
+        'Clear All Placements',
+        'Are you sure you want to remove all players and markers from the map?'
+    );
+    
+    if (confirmed) {
         const markers = mapArea.querySelectorAll('.member-marker, .group-marker, .objective-marker, .boss-marker, .tower-marker, .tree-marker');
         markers.forEach(marker => marker.remove());
         placedMembers = [];
@@ -1852,79 +1926,550 @@ function updatePlaceholder() {
 // DATA PERSISTENCE & EXPORT
 // ============================================================================
 
+// Render all map markers from data
+function renderMap() {
+    // Clear existing markers
+    const existingMarkers = mapArea.querySelectorAll('.member-marker, .group-marker, .objective-marker, .boss-marker, .tower-marker, .tree-marker, .enemy-marker');
+    existingMarkers.forEach(marker => marker.remove());
+    
+    // Render individual member markers
+    placedMembers.forEach(placement => {
+        const member = members.find(m => m.id === placement.memberId);
+        if (!member) return;
+        
+        const marker = document.createElement('div');
+        marker.className = 'member-marker';
+        marker.dataset.memberId = placement.memberId;
+        marker.style.left = `${placement.x - 12}px`;
+        marker.style.top = `${placement.y - 12}px`;
+        marker.draggable = true;
+        
+        const roleCount = { Tank: 0, DPS: 0, Healer: 0, Support: 0 };
+        roleCount[member.role] = 1;
+        
+        marker.innerHTML = `
+            <div class="member-tooltip">
+                <div class="tooltip-roles">
+                    ${roleCount.Tank > 0 ? `<div class="role-item"><span class="role-dot role-Tank"></span> ${roleCount.Tank} Tank</div>` : ''}
+                    ${roleCount.DPS > 0 ? `<div class="role-item"><span class="role-dot role-DPS"></span> ${roleCount.DPS} DPS</div>` : ''}
+                    ${roleCount.Healer > 0 ? `<div class="role-item"><span class="role-dot role-Healer"></span> ${roleCount.Healer} Healer</div>` : ''}
+                    ${roleCount.Support > 0 ? `<div class="role-item"><span class="role-dot role-Support"></span> ${roleCount.Support} Support</div>` : ''}
+                </div>
+            </div>
+            <button class="remove-btn" onclick="removeMemberMarker(${placement.memberId})">×</button>
+        `;
+        
+        marker.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', placement.memberId);
+            e.dataTransfer.setData('type', 'member-marker');
+            e.currentTarget.style.opacity = '0.5';
+        });
+        
+        marker.addEventListener('dragend', (e) => {
+            e.currentTarget.style.opacity = '1';
+            const rect = mapArea.getBoundingClientRect();
+            const x = e.clientX - rect.left + 12;
+            const y = e.clientY - rect.top + 12;
+            const placementIndex = placedMembers.findIndex(p => p.memberId === placement.memberId);
+            if (placementIndex !== -1) {
+                placedMembers[placementIndex].x = x;
+                placedMembers[placementIndex].y = y;
+                marker.style.left = `${x - 12}px`;
+                marker.style.top = `${y - 12}px`;
+                savePositions();
+            }
+        });
+        
+        mapArea.appendChild(marker);
+    });
+    
+    // Render group markers
+    placedGroups.forEach(group => {
+        renderGroupMarker(group);
+    });
+    
+    // Render objectives
+    placedObjectives.forEach(obj => {
+        const marker = document.createElement('div');
+        marker.className = 'objective-marker';
+        marker.dataset.objectiveId = obj.id;
+        marker.style.left = `${obj.x - 12}px`;
+        marker.style.top = `${obj.y - 12}px`;
+        marker.draggable = true;
+        marker.innerHTML = '<button class="remove-btn" onclick="removeObjectiveMarker(\'' + obj.id + '\')">×</button>';
+        
+        marker.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', obj.id);
+            e.dataTransfer.setData('type', 'objective-marker');
+            e.currentTarget.style.opacity = '0.5';
+        });
+        
+        marker.addEventListener('dragend', (e) => {
+            e.currentTarget.style.opacity = '1';
+            const rect = mapArea.getBoundingClientRect();
+            const x = e.clientX - rect.left + 12;
+            const y = e.clientY - rect.top + 12;
+            const objIndex = placedObjectives.findIndex(o => o.id === obj.id);
+            if (objIndex !== -1) {
+                placedObjectives[objIndex].x = x;
+                placedObjectives[objIndex].y = y;
+                marker.style.left = `${x - 12}px`;
+                marker.style.top = `${y - 12}px`;
+                savePositions();
+            }
+        });
+        
+        mapArea.appendChild(marker);
+    });
+    
+    // Render bosses
+    placedBosses.forEach(boss => {
+        const marker = document.createElement('div');
+        marker.className = 'boss-marker';
+        marker.dataset.bossId = boss.id;
+        marker.style.left = `${boss.x - 20}px`;
+        marker.style.top = `${boss.y - 20}px`;
+        marker.draggable = true;
+        marker.innerHTML = '<button class="remove-btn" onclick="removeBossMarker(\'' + boss.id + '\')">×</button>';
+        
+        marker.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', boss.id);
+            e.dataTransfer.setData('type', 'boss-marker');
+            e.currentTarget.style.opacity = '0.5';
+        });
+        
+        marker.addEventListener('dragend', (e) => {
+            e.currentTarget.style.opacity = '1';
+            const rect = mapArea.getBoundingClientRect();
+            const x = e.clientX - rect.left + 20;
+            const y = e.clientY - rect.top + 20;
+            const bossIndex = placedBosses.findIndex(b => b.id === boss.id);
+            if (bossIndex !== -1) {
+                placedBosses[bossIndex].x = x;
+                placedBosses[bossIndex].y = y;
+                marker.style.left = `${x - 20}px`;
+                marker.style.top = `${y - 20}px`;
+                savePositions();
+            }
+        });
+        
+        mapArea.appendChild(marker);
+    });
+    
+    // Render towers
+    placedTowers.forEach(tower => {
+        const marker = document.createElement('div');
+        marker.className = 'tower-marker';
+        marker.dataset.towerId = tower.id;
+        marker.style.left = `${tower.x - 20}px`;
+        marker.style.top = `${tower.y - 20}px`;
+        marker.draggable = true;
+        marker.innerHTML = '<button class="remove-btn" onclick="removeTowerMarker(\'' + tower.id + '\')">×</button>';
+        
+        marker.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', tower.id);
+            e.dataTransfer.setData('type', 'tower-marker');
+            e.currentTarget.style.opacity = '0.5';
+        });
+        
+        marker.addEventListener('dragend', (e) => {
+            e.currentTarget.style.opacity = '1';
+            const rect = mapArea.getBoundingClientRect();
+            const x = e.clientX - rect.left + 20;
+            const y = e.clientY - rect.top + 20;
+            const towerIndex = placedTowers.findIndex(t => t.id === tower.id);
+            if (towerIndex !== -1) {
+                placedTowers[towerIndex].x = x;
+                placedTowers[towerIndex].y = y;
+                marker.style.left = `${x - 20}px`;
+                marker.style.top = `${y - 20}px`;
+                savePositions();
+            }
+        });
+        
+        mapArea.appendChild(marker);
+    });
+    
+    // Render trees
+    placedTrees.forEach(tree => {
+        const marker = document.createElement('div');
+        marker.className = 'tree-marker';
+        marker.dataset.treeId = tree.id;
+        marker.style.left = `${tree.x - 20}px`;
+        marker.style.top = `${tree.y - 20}px`;
+        marker.draggable = true;
+        marker.innerHTML = '<button class="remove-btn" onclick="removeTreeMarker(\'' + tree.id + '\')">×</button>';
+        
+        marker.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', tree.id);
+            e.dataTransfer.setData('type', 'tree-marker');
+            e.currentTarget.style.opacity = '0.5';
+        });
+        
+        marker.addEventListener('dragend', (e) => {
+            e.currentTarget.style.opacity = '1';
+            const rect = mapArea.getBoundingClientRect();
+            const x = e.clientX - rect.left + 20;
+            const y = e.clientY - rect.top + 20;
+            const treeIndex = placedTrees.findIndex(t => t.id === tree.id);
+            if (treeIndex !== -1) {
+                placedTrees[treeIndex].x = x;
+                placedTrees[treeIndex].y = y;
+                marker.style.left = `${x - 20}px`;
+                marker.style.top = `${y - 20}px`;
+                savePositions();
+            }
+        });
+        
+        mapArea.appendChild(marker);
+    });
+    
+    // Render enemies
+    placedEnemies.forEach(enemy => {
+        const marker = document.createElement('div');
+        marker.className = 'enemy-marker';
+        marker.dataset.enemyId = enemy.id;
+        marker.style.left = `${enemy.x - 16}px`;
+        marker.style.top = `${enemy.y - 16}px`;
+        marker.draggable = true;
+        marker.innerHTML = `
+            <div class="group-number">${enemy.count}</div>
+            <button class="remove-btn" onclick="removeEnemyMarker('${enemy.id}')">×</button>
+        `;
+        
+        marker.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', enemy.id);
+            e.dataTransfer.setData('type', 'enemy-marker');
+            e.currentTarget.style.opacity = '0.5';
+        });
+        
+        marker.addEventListener('dragend', (e) => {
+            e.currentTarget.style.opacity = '1';
+            const rect = mapArea.getBoundingClientRect();
+            const x = e.clientX - rect.left + 16;
+            const y = e.clientY - rect.top + 16;
+            const enemyIndex = placedEnemies.findIndex(en => en.id === enemy.id);
+            if (enemyIndex !== -1) {
+                placedEnemies[enemyIndex].x = x;
+                placedEnemies[enemyIndex].y = y;
+                marker.style.left = `${x - 16}px`;
+                marker.style.top = `${y - 16}px`;
+                savePositions();
+            }
+        });
+        
+        mapArea.appendChild(marker);
+    });
+    
+    // Update placeholder and counts
+    updatePlaceholder();
+}
+
 // Export positions
 function exportPositions() {
-    const totalPlaced = getTotalPlacedPlayers();
-    const totalMarkers = placedObjectives.length + placedBosses.length + placedTowers.length + placedTrees.length + placedEnemies.length;
-    if (totalPlaced === 0 && totalMarkers === 0) {
-        alert('No players or markers placed on the map yet!');
-        return;
-    }
+    // Show progress indicator
+    showExportProgress();
     
-    const exportData = {
-        individuals: placedMembers.map(placement => {
-            const member = members.find(m => m.id === placement.memberId);
-            return {
-                id: member.id,
-                name: member.name,
-                role: member.role,
-                team: member.team,
-                x: Math.round(placement.x),
-                y: Math.round(placement.y)
+    // Use setTimeout to allow UI to update
+    setTimeout(() => {
+        try {
+            const exportData = {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                // Export the complete player list
+                players: members.map(member => ({
+                    id: member.id,
+                    name: member.name,
+                    role: member.role,
+                    team: member.team,
+                    weapon1: member.weapon1 || '',
+                    weapon2: member.weapon2 || ''
+                })),
+                // Export placed items
+                individuals: placedMembers.map(placement => ({
+                    memberId: placement.memberId,
+                    x: Math.round(placement.x),
+                    y: Math.round(placement.y)
+                })),
+                groups: placedGroups.map(group => ({
+                    id: group.id,
+                    teams: group.teams,
+                    memberIds: group.memberIds,
+                    x: Math.round(group.x),
+                    y: Math.round(group.y)
+                })),
+                objectives: placedObjectives.map(obj => ({
+                    id: obj.id,
+                    x: Math.round(obj.x),
+                    y: Math.round(obj.y)
+                })),
+                bosses: placedBosses.map(boss => ({
+                    id: boss.id,
+                    x: Math.round(boss.x),
+                    y: Math.round(boss.y)
+                })),
+                towers: placedTowers.map(tower => ({
+                    id: tower.id,
+                    x: Math.round(tower.x),
+                    y: Math.round(tower.y)
+                })),
+                trees: placedTrees.map(tree => ({
+                    id: tree.id,
+                    x: Math.round(tree.x),
+                    y: Math.round(tree.y)
+                })),
+                enemies: placedEnemies.map(enemy => ({
+                    id: enemy.id,
+                    x: Math.round(enemy.x),
+                    y: Math.round(enemy.y),
+                    count: enemy.count
+                })),
+                // Export drawings
+                drawings: drawingPaths.map(path => ({
+                    id: path.id,
+                    points: path.points,
+                    color: path.color || '#ff0000',
+                    width: path.width || 3
+                }))
             };
-        }),
-        groups: placedGroups.map(group => {
-            return {
-                teams: group.teams,
-                members: group.memberIds.map(id => {
-                    const member = members.find(m => m.id === id);
-                    return {
-                        id: member.id,
-                        name: member.name,
-                        role: member.role,
-                        team: member.team
-                    };
-                }),
-                x: Math.round(group.x),
-                y: Math.round(group.y)
-            };
-        }),
-        objectives: placedObjectives.map(obj => ({
-            id: obj.id,
-            x: Math.round(obj.x),
-            y: Math.round(obj.y)
-        })),
-        bosses: placedBosses.map(boss => ({
-            id: boss.id,
-            x: Math.round(boss.x),
-            y: Math.round(boss.y)
-        })),
-        towers: placedTowers.map(tower => ({
-            id: tower.id,
-            x: Math.round(tower.x),
-            y: Math.round(tower.y)
-        })),
-        trees: placedTrees.map(tree => ({
-            id: tree.id,
-            x: Math.round(tree.x),
-            y: Math.round(tree.y)
-        })),
-        enemies: placedEnemies.map(enemy => ({
-            id: enemy.id,
-            x: Math.round(enemy.x),
-            y: Math.round(enemy.y),
-            count: enemy.count
-        }))
+            
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `guild-war-strategy-${Date.now()}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Clean up
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+                hideExportProgress();
+            }, 500);
+        } catch (error) {
+            console.error('Export failed:', error);
+            hideExportProgress();
+            alert('Failed to export strategy: ' + error.message);
+        }
+    }, 100);
+}
+
+function showExportProgress() {
+    const progressBar = document.createElement('div');
+    progressBar.id = 'exportProgressBar';
+    progressBar.innerHTML = `
+        <div class="progress-overlay">
+            <div class="progress-container">
+                <div class="progress-text">Preparing export...</div>
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(progressBar);
+}
+
+function hideExportProgress() {
+    const progressBar = document.getElementById('exportProgressBar');
+    if (progressBar) {
+        progressBar.remove();
+    }
+}
+
+// Import strategy from JSON file
+function importPositions() {
+    importFileInput.click();
+}
+
+function handleImportFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importData = JSON.parse(e.target.result);
+            
+            // Validate import data structure
+            if (!importData.version || !importData.players) {
+                throw new Error('Invalid file format');
+            }
+            
+            // Import player list first
+            if (importData.players && Array.isArray(importData.players)) {
+                members.length = 0; // Clear existing members
+                importData.players.forEach(player => {
+                    members.push({
+                        id: player.id,
+                        name: player.name,
+                        role: player.role,
+                        team: player.team,
+                        weapon1: player.weapon1 || '',
+                        weapon2: player.weapon2 || ''
+                    });
+                });
+                savePlayersToStorage(); // Save to localStorage
+            }
+            
+            // Clear current placements without confirmation
+            const markers = mapArea.querySelectorAll('.member-marker, .group-marker, .objective-marker, .boss-marker, .tower-marker, .tree-marker, .enemy-marker');
+            markers.forEach(marker => marker.remove());
+            placedMembers = [];
+            placedGroups = [];
+            placedObjectives = [];
+            placedBosses = [];
+            placedTowers = [];
+            placedTrees = [];
+            placedEnemies = [];
+            enemiesCount = 0;
+            
+            // Import individuals
+            if (importData.individuals && Array.isArray(importData.individuals)) {
+                importData.individuals.forEach(placement => {
+                    const member = members.find(m => m.id === placement.memberId);
+                    if (member) {
+                        placedMembers.push({
+                            memberId: placement.memberId,
+                            x: placement.x,
+                            y: placement.y
+                        });
+                    }
+                });
+            }
+            
+            // Import groups
+            if (importData.groups && Array.isArray(importData.groups)) {
+                importData.groups.forEach(groupData => {
+                    const memberIds = groupData.memberIds.filter(id => members.find(mem => mem.id === id));
+                    if (memberIds.length > 0) {
+                        placedGroups.push({
+                            id: groupData.id || (Date.now() + Math.random()),
+                            teams: groupData.teams,
+                            memberIds: memberIds,
+                            x: groupData.x,
+                            y: groupData.y
+                        });
+                    }
+                });
+            }
+            
+            // Import objectives
+            if (importData.objectives && Array.isArray(importData.objectives)) {
+                importData.objectives.forEach(obj => {
+                    placedObjectives.push({
+                        id: obj.id,
+                        x: obj.x,
+                        y: obj.y
+                    });
+                });
+            }
+            
+            // Import bosses
+            if (importData.bosses && Array.isArray(importData.bosses)) {
+                importData.bosses.forEach(boss => {
+                    placedBosses.push({
+                        id: boss.id,
+                        x: boss.x,
+                        y: boss.y
+                    });
+                });
+            }
+            
+            // Import towers
+            if (importData.towers && Array.isArray(importData.towers)) {
+                importData.towers.forEach(tower => {
+                    placedTowers.push({
+                        id: tower.id,
+                        x: tower.x,
+                        y: tower.y
+                    });
+                });
+            }
+            
+            // Import trees
+            if (importData.trees && Array.isArray(importData.trees)) {
+                importData.trees.forEach(tree => {
+                    placedTrees.push({
+                        id: tree.id,
+                        x: tree.x,
+                        y: tree.y
+                    });
+                });
+            }
+            
+            // Import enemies
+            if (importData.enemies && Array.isArray(importData.enemies)) {
+                importData.enemies.forEach(enemy => {
+                    placedEnemies.push({
+                        id: enemy.id,
+                        x: enemy.x,
+                        y: enemy.y,
+                        count: enemy.count
+                    });
+                });
+            }
+            
+            // Restore enemies count
+            if (typeof importData.enemiesCount === 'number') {
+                enemiesCount = importData.enemiesCount;
+            } else {
+                // Calculate from enemies array
+                enemiesCount = placedEnemies.reduce((sum, enemy) => sum + (enemy.count || 0), 0);
+            }
+            
+            // Import drawings
+            if (importData.drawings && Array.isArray(importData.drawings)) {
+                drawingPaths = [];
+                drawingDeleteTimers = [];
+                drawingHistory = [];
+                drawingRedoStack = [];
+                
+                importData.drawings.forEach(drawing => {
+                    if (drawing.points && Array.isArray(drawing.points)) {
+                        drawingPaths.push({
+                            id: drawing.id || Date.now() + Math.random(),
+                            points: drawing.points,
+                            color: drawing.color || '#ff0000',
+                            width: drawing.width || 3
+                        });
+                    }
+                });
+                
+                // Save initial drawing state to history
+                if (drawingPaths.length > 0) {
+                    drawingHistory = [JSON.parse(JSON.stringify(drawingPaths))];
+                }
+                
+                // Redraw canvas with imported drawings
+                redrawAllPaths();
+            }
+            
+            // Update display
+            renderMap();
+            renderMemberList();
+            updateCounts();
+            savePositions();
+            
+            alert('Strategy imported successfully!');
+        } catch (error) {
+            console.error('Error importing strategy:', error);
+            alert('Failed to import strategy. Please make sure the file is valid.');
+        }
+        
+        // Reset file input
+        importFileInput.value = '';
     };
     
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'guild-war-strategy.json';
-    link.click();
-    URL.revokeObjectURL(url);
+    reader.readAsText(file);
 }
 
 // Save positions to localStorage
@@ -2341,6 +2886,15 @@ function updatePlacedPlayerInfo(playerId) {
 // UTILITY FUNCTIONS
 // ============================================================================
 
+// Panel toggle functionality
+function togglePanel() {
+    const memberPanel = document.getElementById('memberPanel');
+    const mainContent = document.querySelector('.main-content');
+    
+    memberPanel.classList.toggle('collapsed');
+    mainContent.classList.toggle('panel-collapsed');
+}
+
 function savePlayersToStorage() {
     localStorage.setItem('vcross-gvg-players', JSON.stringify(members));
 }
@@ -2361,6 +2915,31 @@ function loadPlayersFromStorage() {
     } else {
         // No saved data, save the default data from data.js
         savePlayersToStorage();
+    }
+}
+
+// ============================================================================
+// THEME FUNCTIONS
+// ============================================================================
+
+function toggleTheme() {
+    document.body.classList.toggle('dark-theme');
+    const isDark = document.body.classList.contains('dark-theme');
+    
+    // Update icon
+    const icon = themeToggleBtn.querySelector('.theme-icon');
+    icon.textContent = isDark ? '☀️' : '🌙';
+    
+    // Save preference
+    localStorage.setItem('vcross-gvg-theme', isDark ? 'dark' : 'light');
+}
+
+function loadThemePreference() {
+    const savedTheme = localStorage.getItem('vcross-gvg-theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-theme');
+        const icon = themeToggleBtn.querySelector('.theme-icon');
+        icon.textContent = '☀️';
     }
 }
 
