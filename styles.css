@@ -39,6 +39,17 @@ header h1 {
     font-style: italic;
 }
 
+.vcross-link {
+    color: white;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: opacity 0.2s ease;
+}
+
+.vcross-link:hover {
+    opacity: 0.8;
+}
+
 .main-content {
     display: grid;
     grid-template-columns: 350px 1fr;
@@ -2392,3 +2403,12 @@ body.dark-theme #confirmModalMessage {
     color: #e0e0e0;
 }
 
+
+body.dark-theme .vcross-link {
+    color: #e94560;
+    text-decoration: underline;
+}
+
+body.dark-theme .vcross-link:hover {
+    opacity: 0.8;
+}
