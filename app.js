@@ -7,8 +7,10 @@ let placedMembers = [];
 let placedGroups = [];
 let placedObjectives = [];
 let placedBosses = [];
-let placedTowers = [];
-let placedTrees = [];
+let placedBlueTowers = [];
+let placedRedTowers = [];
+let placedBlueTrees = [];
+let placedRedTrees = [];
 let placedEnemies = [];
 
 // UI State
@@ -16,7 +18,7 @@ let filteredMembers = [...members];
 let currentFilter = 'all';
 let currentRoleFilter = 'all';
 let currentView = 'grouped'; // 'grouped' or 'list'
-let placingMode = null; // 'objective' or 'boss' or 'tower' or 'tree' or null
+let placingMode = null; // 'objective' or 'boss' or 'blue-tower' or 'red-tower' or 'blue-tree' or 'red-tree' or null
 
 // Drawing State
 let drawingMode = false;
@@ -55,8 +57,10 @@ const playerCount = document.getElementById('playerCount');
 const placedCount = document.getElementById('placedCount');
 const addObjectiveBtn = document.getElementById('addObjectiveBtn');
 const addBossBtn = document.getElementById('addBossBtn');
-const addTowerBtn = document.getElementById('addTowerBtn');
-const addTreeBtn = document.getElementById('addTreeBtn');
+const addBlueTowerBtn = document.getElementById('addBlueTowerBtn');
+const addRedTowerBtn = document.getElementById('addRedTowerBtn');
+const addBlueTreeBtn = document.getElementById('addBlueTreeBtn');
+const addRedTreeBtn = document.getElementById('addRedTreeBtn');
 const drawBtn = document.getElementById('drawBtn');
 const clearDrawBtn = document.getElementById('clearDrawBtn');
 const undoDrawBtn = document.getElementById('undoDrawBtn');
@@ -314,8 +318,10 @@ function setupEventListeners() {
     // Objective and Boss buttons
     addObjectiveBtn.addEventListener('click', toggleObjectiveMode);
     addBossBtn.addEventListener('click', toggleBossMode);
-    addTowerBtn.addEventListener('click', toggleTowerMode);
-    addTreeBtn.addEventListener('click', toggleTreeMode);
+    addBlueTowerBtn.addEventListener('click', toggleBlueTowerMode);
+    addRedTowerBtn.addEventListener('click', toggleRedTowerMode);
+    addBlueTreeBtn.addEventListener('click', toggleBlueTreeMode);
+    addRedTreeBtn.addEventListener('click', toggleRedTreeMode);
     
     // Drawing buttons
     drawBtn.addEventListener('click', toggleDrawingMode);
@@ -414,13 +420,21 @@ function handleKeyboardShortcut(e) {
             e.preventDefault();
             toggleBossMode();
             break;
-        case 't':
+        case '1':
             e.preventDefault();
-            toggleTowerMode();
+            toggleBlueTowerMode();
             break;
-        case 'e':
+        case '2':
             e.preventDefault();
-            toggleTreeMode();
+            toggleRedTowerMode();
+            break;
+        case '3':
+            e.preventDefault();
+            toggleBlueTreeMode();
+            break;
+        case '4':
+            e.preventDefault();
+            toggleRedTreeMode();
             break;
         case 'd':
             e.preventDefault();
@@ -448,8 +462,10 @@ function deactivatePlacingMode() {
     placingMode = null;
     addObjectiveBtn.classList.remove('active');
     addBossBtn.classList.remove('active');
-    addTowerBtn.classList.remove('active');
-    addTreeBtn.classList.remove('active');
+    addBlueTowerBtn.classList.remove('active');
+    addRedTowerBtn.classList.remove('active');
+    addBlueTreeBtn.classList.remove('active');
+    addRedTreeBtn.classList.remove('active');
     mapArea.style.cursor = 'default';
 }
 
@@ -863,8 +879,10 @@ function toggleObjectiveMode() {
         drawingMode = false;
         addObjectiveBtn.classList.add('active');
         addBossBtn.classList.remove('active');
-        addTowerBtn.classList.remove('active');
-        addTreeBtn.classList.remove('active');
+        addBlueTowerBtn.classList.remove('active');
+        addRedTowerBtn.classList.remove('active');
+        addBlueTreeBtn.classList.remove('active');
+        addRedTreeBtn.classList.remove('active');
         drawBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode', 'drawing-mode');
         mapArea.classList.add('placing-mode');
@@ -885,8 +903,10 @@ function toggleBossMode() {
         drawingMode = false;
         addBossBtn.classList.add('active');
         addObjectiveBtn.classList.remove('active');
-        addTowerBtn.classList.remove('active');
-        addTreeBtn.classList.remove('active');
+        addBlueTowerBtn.classList.remove('active');
+        addRedTowerBtn.classList.remove('active');
+        addBlueTreeBtn.classList.remove('active');
+        addRedTreeBtn.classList.remove('active');
         drawBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode', 'drawing-mode');
         mapArea.classList.add('placing-mode');
@@ -895,20 +915,23 @@ function toggleBossMode() {
 }
 
 // Toggle tower placing mode
-function toggleTowerMode() {
-    if (placingMode === 'tower') {
+// Toggle blue tower placing mode
+function toggleBlueTowerMode() {
+    if (placingMode === 'blue-tower') {
         // Deactivate
         placingMode = null;
-        addTowerBtn.classList.remove('active');
+        addBlueTowerBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode');
     } else {
-        // Activate tower mode
-        placingMode = 'tower';
+        // Activate blue tower mode
+        placingMode = 'blue-tower';
         drawingMode = false;
-        addTowerBtn.classList.add('active');
+        addBlueTowerBtn.classList.add('active');
         addObjectiveBtn.classList.remove('active');
         addBossBtn.classList.remove('active');
-        addTreeBtn.classList.remove('active');
+        addRedTowerBtn.classList.remove('active');
+        addBlueTreeBtn.classList.remove('active');
+        addRedTreeBtn.classList.remove('active');
         drawBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode', 'drawing-mode');
         mapArea.classList.add('placing-mode');
@@ -916,21 +939,71 @@ function toggleTowerMode() {
     }
 }
 
-// Toggle tree placing mode
-function toggleTreeMode() {
-    if (placingMode === 'tree') {
+// Toggle red tower placing mode
+function toggleRedTowerMode() {
+    if (placingMode === 'red-tower') {
         // Deactivate
         placingMode = null;
-        addTreeBtn.classList.remove('active');
+        addRedTowerBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode');
     } else {
-        // Activate tree mode
-        placingMode = 'tree';
+        // Activate red tower mode
+        placingMode = 'red-tower';
         drawingMode = false;
-        addTreeBtn.classList.add('active');
+        addRedTowerBtn.classList.add('active');
         addObjectiveBtn.classList.remove('active');
         addBossBtn.classList.remove('active');
-        addTowerBtn.classList.remove('active');
+        addBlueTowerBtn.classList.remove('active');
+        addBlueTreeBtn.classList.remove('active');
+        addRedTreeBtn.classList.remove('active');
+        drawBtn.classList.remove('active');
+        mapArea.classList.remove('placing-mode', 'drawing-mode');
+        mapArea.classList.add('placing-mode');
+        drawingCanvas.classList.remove('active');
+    }
+}
+
+// Toggle blue tree placing mode
+function toggleBlueTreeMode() {
+    if (placingMode === 'blue-tree') {
+        // Deactivate
+        placingMode = null;
+        addBlueTreeBtn.classList.remove('active');
+        mapArea.classList.remove('placing-mode');
+    } else {
+        // Activate blue tree mode
+        placingMode = 'blue-tree';
+        drawingMode = false;
+        addBlueTreeBtn.classList.add('active');
+        addObjectiveBtn.classList.remove('active');
+        addBossBtn.classList.remove('active');
+        addBlueTowerBtn.classList.remove('active');
+        addRedTowerBtn.classList.remove('active');
+        addRedTreeBtn.classList.remove('active');
+        drawBtn.classList.remove('active');
+        mapArea.classList.remove('placing-mode', 'drawing-mode');
+        mapArea.classList.add('placing-mode');
+        drawingCanvas.classList.remove('active');
+    }
+}
+
+// Toggle red tree placing mode
+function toggleRedTreeMode() {
+    if (placingMode === 'red-tree') {
+        // Deactivate
+        placingMode = null;
+        addRedTreeBtn.classList.remove('active');
+        mapArea.classList.remove('placing-mode');
+    } else {
+        // Activate red tree mode
+        placingMode = 'red-tree';
+        drawingMode = false;
+        addRedTreeBtn.classList.add('active');
+        addObjectiveBtn.classList.remove('active');
+        addBossBtn.classList.remove('active');
+        addBlueTowerBtn.classList.remove('active');
+        addRedTowerBtn.classList.remove('active');
+        addBlueTreeBtn.classList.remove('active');
         drawBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode', 'drawing-mode');
         mapArea.classList.add('placing-mode');
@@ -955,10 +1028,14 @@ function handleMapClick(e) {
         placeObjectiveMarker(x, y);
     } else if (placingMode === 'boss') {
         placeBossMarker(x, y);
-    } else if (placingMode === 'tower') {
-        placeTowerMarker(x, y);
-    } else if (placingMode === 'tree') {
-        placeTreeMarker(x, y);
+    } else if (placingMode === 'blue-tower') {
+        placeBlueTowerMarker(x, y);
+    } else if (placingMode === 'red-tower') {
+        placeRedTowerMarker(x, y);
+    } else if (placingMode === 'blue-tree') {
+        placeBlueTreeMarker(x, y);
+    } else if (placingMode === 'red-tree') {
+        placeRedTreeMarker(x, y);
     }
 }
 
@@ -1003,8 +1080,8 @@ function placeBossMarker(x, y) {
     const marker = document.createElement('div');
     marker.className = 'boss-marker';
     marker.dataset.bossId = bossId;
-    marker.style.left = `${x - 30}px`; // Center the 60px image
-    marker.style.top = `${y - 30}px`;
+    marker.style.left = `${x - 28}px`; // Center the 56px image
+    marker.style.top = `${y - 28}px`;
     marker.draggable = true;
     
     marker.innerHTML = `
@@ -1073,8 +1150,8 @@ function handleBossDragEnd(e) {
     if (boss) {
         boss.x = x;
         boss.y = y;
-        e.currentTarget.style.left = `${x - 30}px`; // Center the 60px image
-        e.currentTarget.style.top = `${y - 30}px`;
+        e.currentTarget.style.left = `${x - 28}px`; // Center the 56px image
+        e.currentTarget.style.top = `${y - 28}px`;
         savePositions();
     }
 }
@@ -1101,28 +1178,29 @@ function removeBossMarker(bossId) {
     updatePlaceholder();
 }
 
-// Place tower marker
-function placeTowerMarker(x, y) {
-    const towerId = `tower-${Date.now()}`;
+// Place blue tower marker
+function placeBlueTowerMarker(x, y) {
+    const towerId = `blue-tower-${Date.now()}`;
     
     const marker = document.createElement('div');
-    marker.className = 'tower-marker';
+    marker.className = 'tower-marker blue-tower';
     marker.dataset.towerId = towerId;
-    marker.style.left = `${x - 30}px`; // Center the 60px image
-    marker.style.top = `${y - 30}px`;
+    marker.dataset.towerType = 'blue';
+    marker.style.left = `${x - 28}px`; // Center the 56px image
+    marker.style.top = `${y - 28}px`;
     marker.draggable = true;
     
     marker.innerHTML = `
-        <img src="images/tower.png" alt="Tower" draggable="false">
-        <button class="remove-btn" onclick="removeTowerMarker('${towerId}')">×</button>
+        <img src="images/tower_blue.png" alt="Blue Tower" draggable="false">
+        <button class="remove-btn" onclick="removeBlueTowerMarker('${towerId}')">×</button>
     `;
     
-    marker.addEventListener('dragstart', handleTowerDragStart);
-    marker.addEventListener('dragend', handleTowerDragEnd);
+    marker.addEventListener('dragstart', handleBlueTowerDragStart);
+    marker.addEventListener('dragend', handleBlueTowerDragEnd);
     
     mapArea.appendChild(marker);
     
-    placedTowers.push({
+    placedBlueTowers.push({
         id: towerId,
         x: x,
         y: y
@@ -1132,15 +1210,15 @@ function placeTowerMarker(x, y) {
     updatePlaceholder();
 }
 
-// Handle tower drag
-function handleTowerDragStart(e) {
+// Handle blue tower drag
+function handleBlueTowerDragStart(e) {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', e.currentTarget.dataset.towerId);
-    e.dataTransfer.setData('type', 'tower-marker');
+    e.dataTransfer.setData('type', 'blue-tower-marker');
     e.currentTarget.style.opacity = '0.5';
 }
 
-function handleTowerDragEnd(e) {
+function handleBlueTowerDragEnd(e) {
     e.currentTarget.style.opacity = '1';
     
     const towerId = e.currentTarget.dataset.towerId;
@@ -1148,49 +1226,120 @@ function handleTowerDragEnd(e) {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
-    const tower = placedTowers.find(t => t.id === towerId);
+    const tower = placedBlueTowers.find(t => t.id === towerId);
     if (tower) {
         tower.x = x;
         tower.y = y;
-        e.currentTarget.style.left = `${x - 30}px`; // Center the 60px image
-        e.currentTarget.style.top = `${y - 30}px`;
+        e.currentTarget.style.left = `${x - 28}px`; // Center the 56px image
+        e.currentTarget.style.top = `${y - 28}px`;
         savePositions();
     }
 }
 
-// Remove tower marker
-function removeTowerMarker(towerId) {
+// Remove blue tower marker
+function removeBlueTowerMarker(towerId) {
     const marker = mapArea.querySelector(`[data-tower-id="${towerId}"]`);
     if (marker) {
         marker.remove();
     }
-    placedTowers = placedTowers.filter(t => t.id !== towerId);
+    placedBlueTowers = placedBlueTowers.filter(t => t.id !== towerId);
+    savePositions();
+    updatePlaceholder();
+}
+
+// Place red tower marker
+function placeRedTowerMarker(x, y) {
+    const towerId = `red-tower-${Date.now()}`;
+    
+    const marker = document.createElement('div');
+    marker.className = 'tower-marker red-tower';
+    marker.dataset.towerId = towerId;
+    marker.dataset.towerType = 'red';
+    marker.style.left = `${x - 28}px`; // Center the 56px image
+    marker.style.top = `${y - 28}px`;
+    marker.draggable = true;
+    
+    marker.innerHTML = `
+        <img src="images/tower_red.png" alt="Red Tower" draggable="false">
+        <button class="remove-btn" onclick="removeRedTowerMarker('${towerId}')">×</button>
+    `;
+    
+    marker.addEventListener('dragstart', handleRedTowerDragStart);
+    marker.addEventListener('dragend', handleRedTowerDragEnd);
+    
+    mapArea.appendChild(marker);
+    
+    placedRedTowers.push({
+        id: towerId,
+        x: x,
+        y: y
+    });
+    
+    savePositions();
+    updatePlaceholder();
+}
+
+// Handle red tower drag
+function handleRedTowerDragStart(e) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', e.currentTarget.dataset.towerId);
+    e.dataTransfer.setData('type', 'red-tower-marker');
+    e.currentTarget.style.opacity = '0.5';
+}
+
+function handleRedTowerDragEnd(e) {
+    e.currentTarget.style.opacity = '1';
+    
+    const towerId = e.currentTarget.dataset.towerId;
+    const rect = mapArea.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const tower = placedRedTowers.find(t => t.id === towerId);
+    if (tower) {
+        tower.x = x;
+        tower.y = y;
+        e.currentTarget.style.left = `${x - 28}px`; // Center the 56px image
+        e.currentTarget.style.top = `${y - 28}px`;
+        savePositions();
+    }
+}
+
+// Remove red tower marker
+function removeRedTowerMarker(towerId) {
+    const marker = mapArea.querySelector(`[data-tower-id="${towerId}"]`);
+    if (marker) {
+        marker.remove();
+    }
+    placedRedTowers = placedRedTowers.filter(t => t.id !== towerId);
     savePositions();
     updatePlaceholder();
 }
 
 // Place tree marker
-function placeTreeMarker(x, y) {
-    const treeId = `tree-${Date.now()}`;
+// Place blue tree marker
+function placeBlueTreeMarker(x, y) {
+    const treeId = `blue-tree-${Date.now()}`;
     
     const marker = document.createElement('div');
-    marker.className = 'tree-marker';
+    marker.className = 'tree-marker blue-tree';
     marker.dataset.treeId = treeId;
-    marker.style.left = `${x - 25}px`; // Center the 50px marker
-    marker.style.top = `${y - 25}px`;
+    marker.dataset.treeType = 'blue';
+    marker.style.left = `${x - 28}px`; // Center the 56px image
+    marker.style.top = `${y - 28}px`;
     marker.draggable = true;
     
     marker.innerHTML = `
-        🌳
-        <button class="remove-btn" onclick="removeTreeMarker('${treeId}')">×</button>
+        <img src="images/tree_blue.png" alt="Blue Tree" draggable="false">
+        <button class="remove-btn" onclick="removeBlueTreeMarker('${treeId}')">×</button>
     `;
     
-    marker.addEventListener('dragstart', handleTreeDragStart);
-    marker.addEventListener('dragend', handleTreeDragEnd);
+    marker.addEventListener('dragstart', handleBlueTreeDragStart);
+    marker.addEventListener('dragend', handleBlueTreeDragEnd);
     
     mapArea.appendChild(marker);
     
-    placedTrees.push({
+    placedBlueTrees.push({
         id: treeId,
         x: x,
         y: y
@@ -1200,15 +1349,15 @@ function placeTreeMarker(x, y) {
     updatePlaceholder();
 }
 
-// Handle tree drag
-function handleTreeDragStart(e) {
+// Handle blue tree drag
+function handleBlueTreeDragStart(e) {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', e.currentTarget.dataset.treeId);
-    e.dataTransfer.setData('type', 'tree-marker');
+    e.dataTransfer.setData('type', 'blue-tree-marker');
     e.currentTarget.style.opacity = '0.5';
 }
 
-function handleTreeDragEnd(e) {
+function handleBlueTreeDragEnd(e) {
     e.currentTarget.style.opacity = '1';
     
     const treeId = e.currentTarget.dataset.treeId;
@@ -1216,23 +1365,92 @@ function handleTreeDragEnd(e) {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
-    const tree = placedTrees.find(t => t.id === treeId);
+    const tree = placedBlueTrees.find(t => t.id === treeId);
     if (tree) {
         tree.x = x;
         tree.y = y;
-        e.currentTarget.style.left = `${x - 25}px`; // Center the 50px marker
-        e.currentTarget.style.top = `${y - 25}px`;
+        e.currentTarget.style.left = `${x - 28}px`; // Center the 56px image
+        e.currentTarget.style.top = `${y - 28}px`;
         savePositions();
     }
 }
 
-// Remove tree marker
-function removeTreeMarker(treeId) {
+// Remove blue tree marker
+function removeBlueTreeMarker(treeId) {
     const marker = mapArea.querySelector(`[data-tree-id="${treeId}"]`);
     if (marker) {
         marker.remove();
     }
-    placedTrees = placedTrees.filter(t => t.id !== treeId);
+    placedBlueTrees = placedBlueTrees.filter(t => t.id !== treeId);
+    savePositions();
+    updatePlaceholder();
+}
+
+// Place red tree marker
+function placeRedTreeMarker(x, y) {
+    const treeId = `red-tree-${Date.now()}`;
+    
+    const marker = document.createElement('div');
+    marker.className = 'tree-marker red-tree';
+    marker.dataset.treeId = treeId;
+    marker.dataset.treeType = 'red';
+    marker.style.left = `${x - 28}px`; // Center the 56px image
+    marker.style.top = `${y - 28}px`;
+    marker.draggable = true;
+    
+    marker.innerHTML = `
+        <img src="images/tree_red.png" alt="Red Tree" draggable="false">
+        <button class="remove-btn" onclick="removeRedTreeMarker('${treeId}')">×</button>
+    `;
+    
+    marker.addEventListener('dragstart', handleRedTreeDragStart);
+    marker.addEventListener('dragend', handleRedTreeDragEnd);
+    
+    mapArea.appendChild(marker);
+    
+    placedRedTrees.push({
+        id: treeId,
+        x: x,
+        y: y
+    });
+    
+    savePositions();
+    updatePlaceholder();
+}
+
+// Handle red tree drag
+function handleRedTreeDragStart(e) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', e.currentTarget.dataset.treeId);
+    e.dataTransfer.setData('type', 'red-tree-marker');
+    e.currentTarget.style.opacity = '0.5';
+}
+
+function handleRedTreeDragEnd(e) {
+    e.currentTarget.style.opacity = '1';
+    
+    const treeId = e.currentTarget.dataset.treeId;
+    const rect = mapArea.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const tree = placedRedTrees.find(t => t.id === treeId);
+    if (tree) {
+        tree.x = x;
+        tree.y = y;
+        e.currentTarget.style.left = `${x - 28}px`; // Center the 56px image
+        e.currentTarget.style.top = `${y - 28}px`;
+        savePositions();
+    }
+}
+
+// Remove red tree marker
+function removeRedTreeMarker(treeId) {
+    const marker = mapArea.querySelector(`[data-tree-id="${treeId}"]`);
+    if (marker) {
+        marker.remove();
+    }
+    placedRedTrees = placedRedTrees.filter(t => t.id !== treeId);
     savePositions();
     updatePlaceholder();
 }
@@ -1564,6 +1782,10 @@ function toggleDrawingMode() {
         drawBtn.classList.add('active');
         addObjectiveBtn.classList.remove('active');
         addBossBtn.classList.remove('active');
+        addBlueTowerBtn.classList.remove('active');
+        addRedTowerBtn.classList.remove('active');
+        addBlueTreeBtn.classList.remove('active');
+        addRedTreeBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode');
         mapArea.classList.add('drawing-mode');
         drawingCanvas.classList.add('active');
@@ -1985,7 +2207,7 @@ function applyFilters(searchTerm = '') {
 // Clear all placements
 async function clearAllPlacements() {
     const totalPlaced = getTotalPlacedPlayers();
-    const totalMarkers = placedObjectives.length + placedBosses.length + placedTowers.length + placedTrees.length + placedEnemies.length;
+    const totalMarkers = placedObjectives.length + placedBosses.length + placedBlueTowers.length + placedRedTowers.length + placedBlueTrees.length + placedRedTrees.length + placedEnemies.length;
     if (totalPlaced === 0 && totalMarkers === 0) return;
     
     const confirmed = await showConfirm(
@@ -2000,8 +2222,10 @@ async function clearAllPlacements() {
         placedGroups = [];
         placedObjectives = [];
         placedBosses = [];
-        placedTowers = [];
-        placedTrees = [];
+        placedBlueTowers = [];
+        placedRedTowers = [];
+        placedBlueTrees = [];
+        placedRedTrees = [];
         placedEnemies = [];
         savePositions();
         updateCounts();
@@ -2024,7 +2248,7 @@ function updatePlaceholder() {
     if (placeholder) {
         const hasContent = placedMembers.length > 0 || placedGroups.length > 0 || 
                           placedObjectives.length > 0 || placedBosses.length > 0 ||
-                          placedTowers.length > 0 || placedTrees.length > 0 || placedEnemies.length > 0;
+                          placedBlueTowers.length > 0 || placedRedTowers.length > 0 || placedBlueTrees.length > 0 || placedRedTrees.length > 0 || placedEnemies.length > 0;
         placeholder.style.display = hasContent ? 'none' : 'block';
     }
 }
@@ -2136,8 +2360,8 @@ function renderMap() {
         const marker = document.createElement('div');
         marker.className = 'boss-marker';
         marker.dataset.bossId = boss.id;
-        marker.style.left = `${boss.x - 20}px`;
-        marker.style.top = `${boss.y - 20}px`;
+        marker.style.left = `${boss.x - 28}px`;
+        marker.style.top = `${boss.y - 28}px`;
         marker.draggable = true;
         marker.innerHTML = '<button class="remove-btn" onclick="removeBossMarker(\'' + boss.id + '\')">×</button>';
         
@@ -2151,14 +2375,14 @@ function renderMap() {
         marker.addEventListener('dragend', (e) => {
             e.currentTarget.style.opacity = '1';
             const rect = mapArea.getBoundingClientRect();
-            const x = e.clientX - rect.left + 20;
-            const y = e.clientY - rect.top + 20;
+            const x = e.clientX - rect.left + 28;
+            const y = e.clientY - rect.top + 28;
             const bossIndex = placedBosses.findIndex(b => b.id === boss.id);
             if (bossIndex !== -1) {
                 placedBosses[bossIndex].x = x;
                 placedBosses[bossIndex].y = y;
-                marker.style.left = `${x - 20}px`;
-                marker.style.top = `${y - 20}px`;
+                marker.style.left = `${x - 28}px`;
+                marker.style.top = `${y - 28}px`;
                 savePositions();
             }
         });
@@ -2166,34 +2390,77 @@ function renderMap() {
         mapArea.appendChild(marker);
     });
     
-    // Render towers
-    placedTowers.forEach(tower => {
+    // Render blue towers
+    placedBlueTowers.forEach(tower => {
         const marker = document.createElement('div');
-        marker.className = 'tower-marker';
+        marker.className = 'tower-marker blue-tower';
         marker.dataset.towerId = tower.id;
-        marker.style.left = `${tower.x - 20}px`;
-        marker.style.top = `${tower.y - 20}px`;
+        marker.dataset.towerType = 'blue';
+        marker.style.left = `${tower.x - 28}px`;
+        marker.style.top = `${tower.y - 28}px`;
         marker.draggable = true;
-        marker.innerHTML = '<button class="remove-btn" onclick="removeTowerMarker(\'' + tower.id + '\')">×</button>';
+        marker.innerHTML = `
+            <img src="images/tower_blue.png" alt="Blue Tower" draggable="false">
+            <button class="remove-btn" onclick="removeBlueTowerMarker('${tower.id}')">×</button>
+        `;
         
         marker.addEventListener('dragstart', (e) => {
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', tower.id);
-            e.dataTransfer.setData('type', 'tower-marker');
+            e.dataTransfer.setData('type', 'blue-tower-marker');
             e.currentTarget.style.opacity = '0.5';
         });
         
         marker.addEventListener('dragend', (e) => {
             e.currentTarget.style.opacity = '1';
             const rect = mapArea.getBoundingClientRect();
-            const x = e.clientX - rect.left + 20;
-            const y = e.clientY - rect.top + 20;
-            const towerIndex = placedTowers.findIndex(t => t.id === tower.id);
+            const x = e.clientX - rect.left + 28;
+            const y = e.clientY - rect.top + 28;
+            const towerIndex = placedBlueTowers.findIndex(t => t.id === tower.id);
             if (towerIndex !== -1) {
-                placedTowers[towerIndex].x = x;
-                placedTowers[towerIndex].y = y;
-                marker.style.left = `${x - 20}px`;
-                marker.style.top = `${y - 20}px`;
+                placedBlueTowers[towerIndex].x = x;
+                placedBlueTowers[towerIndex].y = y;
+                marker.style.left = `${x - 28}px`;
+                marker.style.top = `${y - 28}px`;
+                savePositions();
+            }
+        });
+        
+        mapArea.appendChild(marker);
+    });
+    
+    // Render red towers
+    placedRedTowers.forEach(tower => {
+        const marker = document.createElement('div');
+        marker.className = 'tower-marker red-tower';
+        marker.dataset.towerId = tower.id;
+        marker.dataset.towerType = 'red';
+        marker.style.left = `${tower.x - 28}px`;
+        marker.style.top = `${tower.y - 28}px`;
+        marker.draggable = true;
+        marker.innerHTML = `
+            <img src="images/tower_red.png" alt="Red Tower" draggable="false">
+            <button class="remove-btn" onclick="removeRedTowerMarker('${tower.id}')">×</button>
+        `;
+        
+        marker.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', tower.id);
+            e.dataTransfer.setData('type', 'red-tower-marker');
+            e.currentTarget.style.opacity = '0.5';
+        });
+        
+        marker.addEventListener('dragend', (e) => {
+            e.currentTarget.style.opacity = '1';
+            const rect = mapArea.getBoundingClientRect();
+            const x = e.clientX - rect.left + 28;
+            const y = e.clientY - rect.top + 28;
+            const towerIndex = placedRedTowers.findIndex(t => t.id === tower.id);
+            if (towerIndex !== -1) {
+                placedRedTowers[towerIndex].x = x;
+                placedRedTowers[towerIndex].y = y;
+                marker.style.left = `${x - 28}px`;
+                marker.style.top = `${y - 28}px`;
                 savePositions();
             }
         });
@@ -2321,12 +2588,22 @@ function exportPositions() {
                     x: Math.round(boss.x),
                     y: Math.round(boss.y)
                 })),
-                towers: placedTowers.map(tower => ({
+                blueTowers: placedBlueTowers.map(tower => ({
                     id: tower.id,
                     x: Math.round(tower.x),
                     y: Math.round(tower.y)
                 })),
-                trees: placedTrees.map(tree => ({
+                redTowers: placedRedTowers.map(tower => ({
+                    id: tower.id,
+                    x: Math.round(tower.x),
+                    y: Math.round(tower.y)
+                })),
+                blueTrees: placedBlueTrees.map(tree => ({
+                    id: tree.id,
+                    x: Math.round(tree.x),
+                    y: Math.round(tree.y)
+                })),
+                redTrees: placedRedTrees.map(tree => ({
                     id: tree.id,
                     x: Math.round(tree.x),
                     y: Math.round(tree.y)
@@ -2434,8 +2711,10 @@ function handleImportFile(event) {
             placedGroups = [];
             placedObjectives = [];
             placedBosses = [];
-            placedTowers = [];
-            placedTrees = [];
+            placedBlueTowers = [];
+            placedRedTowers = [];
+            placedBlueTrees = [];
+            placedRedTrees = [];
             placedEnemies = [];
             enemiesCount = 0;
             
@@ -2491,10 +2770,10 @@ function handleImportFile(event) {
                 });
             }
             
-            // Import towers
-            if (importData.towers && Array.isArray(importData.towers)) {
-                importData.towers.forEach(tower => {
-                    placedTowers.push({
+            // Import blue towers
+            if (importData.blueTowers && Array.isArray(importData.blueTowers)) {
+                importData.blueTowers.forEach(tower => {
+                    placedBlueTowers.push({
                         id: tower.id,
                         x: tower.x,
                         y: tower.y
@@ -2502,10 +2781,55 @@ function handleImportFile(event) {
                 });
             }
             
-            // Import trees
-            if (importData.trees && Array.isArray(importData.trees)) {
+            // Import red towers
+            if (importData.redTowers && Array.isArray(importData.redTowers)) {
+                importData.redTowers.forEach(tower => {
+                    placedRedTowers.push({
+                        id: tower.id,
+                        x: tower.x,
+                        y: tower.y
+                    });
+                });
+            }
+            
+            // Backwards compatibility: Import old single 'towers' array
+            if (importData.towers && Array.isArray(importData.towers)) {
+                importData.towers.forEach(tower => {
+                    // Default old towers to blue (ally) towers
+                    placedBlueTowers.push({
+                        id: tower.id,
+                        x: tower.x,
+                        y: tower.y
+                    });
+                });
+            }
+            
+            // Import blue trees
+            if (importData.blueTrees && Array.isArray(importData.blueTrees)) {
+                importData.blueTrees.forEach(tree => {
+                    placedBlueTrees.push({
+                        id: tree.id,
+                        x: tree.x,
+                        y: tree.y
+                    });
+                });
+            }
+            
+            // Import red trees
+            if (importData.redTrees && Array.isArray(importData.redTrees)) {
+                importData.redTrees.forEach(tree => {
+                    placedRedTrees.push({
+                        id: tree.id,
+                        x: tree.x,
+                        y: tree.y
+                    });
+                });
+            }
+            
+            // Backwards compatibility: Import old single 'trees' array as blue trees
+            if (importData.trees && Array.isArray(importData.trees) && !importData.blueTrees && !importData.redTrees) {
                 importData.trees.forEach(tree => {
-                    placedTrees.push({
+                    placedBlueTrees.push({
                         id: tree.id,
                         x: tree.x,
                         y: tree.y
@@ -2586,8 +2910,10 @@ function savePositions() {
         groups: placedGroups,
         objectives: placedObjectives,
         bosses: placedBosses,
-        towers: placedTowers,
-        trees: placedTrees,
+        blueTowers: placedBlueTowers,
+        redTowers: placedRedTowers,
+        blueTrees: placedBlueTrees,
+        redTrees: placedRedTrees,
         enemies: placedEnemies
     };
     localStorage.setItem('vcross-gvg-positions', JSON.stringify(data));
@@ -2615,6 +2941,8 @@ function loadSavedPositions() {
                 placedGroups = [];
                 placedObjectives = [];
                 placedBosses = [];
+                placedBlueTowers = [];
+                placedRedTowers = [];
                 placedEnemies = [];
                 
                 // Load individual members
@@ -2651,17 +2979,45 @@ function loadSavedPositions() {
                     });
                 }
                 
-                // Load towers
-                if (data.towers) {
-                    data.towers.forEach(tower => {
-                        placeTowerMarker(tower.x, tower.y);
+                // Load blue towers
+                if (data.blueTowers) {
+                    data.blueTowers.forEach(tower => {
+                        placeBlueTowerMarker(tower.x, tower.y);
                     });
                 }
                 
-                // Load trees
-                if (data.trees) {
+                // Load red towers
+                if (data.redTowers) {
+                    data.redTowers.forEach(tower => {
+                        placeRedTowerMarker(tower.x, tower.y);
+                    });
+                }
+                
+                // Backwards compatibility: Load old single 'towers' array as blue towers
+                if (data.towers && !data.blueTowers && !data.redTowers) {
+                    data.towers.forEach(tower => {
+                        placeBlueTowerMarker(tower.x, tower.y);
+                    });
+                }
+                
+                // Load blue trees
+                if (data.blueTrees) {
+                    data.blueTrees.forEach(tree => {
+                        placeBlueTreeMarker(tree.x, tree.y);
+                    });
+                }
+                
+                // Load red trees
+                if (data.redTrees) {
+                    data.redTrees.forEach(tree => {
+                        placeRedTreeMarker(tree.x, tree.y);
+                    });
+                }
+                
+                // Backwards compatibility: Load old single 'trees' array as blue trees
+                if (data.trees && !data.blueTrees && !data.redTrees) {
                     data.trees.forEach(tree => {
-                        placeTreeMarker(tree.x, tree.y);
+                        placeBlueTreeMarker(tree.x, tree.y);
                     });
                 }
                 
@@ -2744,23 +3100,6 @@ function setupPlayerManagementHandlers() {
     
     // Form submission
     playerEditForm.addEventListener('submit', handlePlayerFormSubmit);
-    
-    // Guild Manager toggle
-    const guildmanagerToggle = document.getElementById('guildmanagerToggle');
-    const guildmanagerSection = document.getElementById('guildmanagerSection');
-    const importGuildmanagerBtn = document.getElementById('importGuildmanagerBtn');
-    
-    guildmanagerToggle.addEventListener('change', (e) => {
-        if (e.target.checked) {
-            guildmanagerSection.style.display = 'block';
-            addNewPlayerBtn.style.display = 'none';
-        } else {
-            guildmanagerSection.style.display = 'none';
-            addNewPlayerBtn.style.display = 'block';
-        }
-    });
-    
-    importGuildmanagerBtn.addEventListener('click', importFromGuildManager);
 }
 
 // ============================================================================
@@ -3004,141 +3343,6 @@ function updatePlacedPlayerInfo(playerId) {
             }
         }
     });
-}
-
-// ============================================================================
-// GUILD MANAGER IMPORT
-// ============================================================================
-
-async function importFromGuildManager() {
-    const urlInput = document.getElementById('guildmanagerUrl');
-    const cookieInput = document.getElementById('guildmanagerCookie');
-    const statusDiv = document.getElementById('guildmanagerStatus');
-    const importBtn = document.getElementById('importGuildmanagerBtn');
-    
-    const url = urlInput.value.trim();
-    const cookie = cookieInput.value.trim();
-    
-    // Validate inputs
-    if (!url) {
-        showStatus('error', 'Please enter a Guild Manager URL');
-        return;
-    }
-    
-    if (!cookie) {
-        showStatus('error', 'Please enter your authentication cookie');
-        return;
-    }
-    
-    // Show loading state
-    showStatus('loading', 'Fetching data from Guild Manager...');
-    importBtn.disabled = true;
-    
-    try {
-        // Use a CORS proxy to fetch the data
-        const response = await fetch(url, {
-            headers: {
-                'Cookie': cookie,
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to fetch data. Please check your URL and cookie.');
-        }
-        
-        const html = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        // Parse the data
-        const importedPlayers = parseGuildManagerHTML(doc);
-        
-        if (importedPlayers.length === 0) {
-            showStatus('error', 'No players found. Please check the page structure.');
-            return;
-        }
-        
-        // Clear existing players and add imported ones
-        members = importedPlayers;
-        savePlayersToStorage();
-        renderMemberList();
-        renderPlayerManagementList();
-        updateCounts();
-        
-        showStatus('success', `Successfully imported ${importedPlayers.length} players!`);
-        
-        // Reset after success
-        setTimeout(() => {
-            document.getElementById('guildmanagerToggle').checked = false;
-            document.getElementById('guildmanagerSection').style.display = 'none';
-            addNewPlayerBtn.style.display = 'block';
-            statusDiv.innerHTML = '';
-        }, 3000);
-        
-    } catch (error) {
-        console.error('Guild Manager import error:', error);
-        showStatus('error', `Error: ${error.message}. Note: Direct fetching may be blocked by CORS. Try using browser extension or manual copy.`);
-    } finally {
-        importBtn.disabled = false;
-    }
-    
-    function showStatus(type, message) {
-        statusDiv.className = `import-status ${type}`;
-        statusDiv.textContent = message;
-    }
-}
-
-function parseGuildManagerHTML(doc) {
-    const players = [];
-    const teamMap = {
-        'front line': 'FrontLine',
-        'frontline': 'FrontLine',
-        'jungle': 'Jungle',
-        'defense 1': 'Defence 1',
-        'defence 1': 'Defence 1',
-        'defense 2': 'Defence 2',
-        'defence 2': 'Defence 2',
-        'backline 1': 'Backline 1',
-        'back line 1': 'Backline 1',
-        'backline 2': 'Backline 2',
-        'back line 2': 'Backline 2'
-    };
-    
-    // Find all team groups
-    const teamCards = doc.querySelectorAll('[data-slot="card-header"]');
-    
-    teamCards.forEach((teamHeader) => {
-        // Get team name
-        const teamNameElement = teamHeader.querySelector('h3, .text-white');
-        if (!teamNameElement) return;
-        
-        const teamNameRaw = teamNameElement.textContent.trim().toLowerCase();
-        const teamName = teamMap[teamNameRaw] || 'FrontLine';
-        
-        // Find the parent card to get players
-        const card = teamHeader.closest('[data-slot="base"]') || teamHeader.parentElement;
-        if (!card) return;
-        
-        // Find all player names in this team
-        const playerElements = card.querySelectorAll('.shrink-0.truncate.text-xs.font-medium.text-white');
-        
-        playerElements.forEach((playerEl) => {
-            const playerName = playerEl.textContent.trim();
-            if (playerName && playerName.length > 0) {
-                players.push({
-                    id: Date.now() + Math.random(),
-                    name: playerName,
-                    role: 'DPS', // Default role, can be customized later
-                    team: teamName,
-                    weapon1: 'Nameless Sword',
-                    weapon2: 'Nameless Spear'
-                });
-            }
-        });
-    });
-    
-    return players;
 }
 
 // ============================================================================

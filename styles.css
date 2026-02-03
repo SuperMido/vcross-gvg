@@ -524,8 +524,8 @@ header h1 {
 }
 
 .btn-icon-img {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     object-fit: contain;
 }
 
@@ -1155,8 +1155,8 @@ header h1 {
 /* Boss Markers */
 .boss-marker {
     position: absolute;
-    width: 60px;
-    height: 60px;
+    width: 56px;
+    height: 56px;
     cursor: move;
     z-index: 10;
     user-select: none;
@@ -1215,8 +1215,8 @@ header h1 {
 /* Tower Markers */
 .tower-marker {
     position: absolute;
-    width: 60px;
-    height: 60px;
+    width: 56px;
+    height: 56px;
     cursor: move;
     z-index: 10;
     user-select: none;
@@ -1245,16 +1245,16 @@ header h1 {
 
 .tower-marker .remove-btn {
     position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 22px;
-    height: 22px;
+    top: 5px;
+    right: 5px;
+    width: 26px;
+    height: 26px;
     background: #ff4757;
     color: white;
     border: 2px solid white;
     border-radius: 50%;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: bold;
     display: none;
     align-items: center;
@@ -1275,8 +1275,8 @@ header h1 {
 /* Tree Markers */
 .tree-marker {
     position: absolute;
-    width: 50px;
-    height: 50px;
+    width: 56px;
+    height: 56px;
     cursor: move;
     z-index: 10;
     user-select: none;
@@ -1284,32 +1284,37 @@ header h1 {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 40px;
-    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7));
 }
 
 .map-area.drawing-mode .tree-marker {
     pointer-events: none;
 }
 
+.tree-marker img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
 .tree-marker:hover {
     transform: scale(1.15);
     z-index: 100;
-    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7));
+    filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.9));
 }
 
 .tree-marker .remove-btn {
     position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 22px;
-    height: 22px;
+    top: 5px;
+    right: 5px;
+    width: 26px;
+    height: 26px;
     background: #ff4757;
     color: white;
     border: 2px solid white;
     border-radius: 50%;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: bold;
     display: none;
     align-items: center;
@@ -1392,8 +1397,8 @@ header h1 {
 }
 
 .toolbar-btn .btn-icon-img {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     object-fit: contain;
 }
 
