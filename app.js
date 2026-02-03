@@ -11,6 +11,8 @@ let placedBlueTowers = [];
 let placedRedTowers = [];
 let placedBlueTrees = [];
 let placedRedTrees = [];
+let placedBlueGeese = [];
+let placedRedGeese = [];
 let placedEnemies = [];
 
 // UI State
@@ -18,7 +20,7 @@ let filteredMembers = [...members];
 let currentFilter = 'all';
 let currentRoleFilter = 'all';
 let currentView = 'grouped'; // 'grouped' or 'list'
-let placingMode = null; // 'objective' or 'boss' or 'blue-tower' or 'red-tower' or 'blue-tree' or 'red-tree' or null
+let placingMode = null; // 'objective' or 'boss' or 'blue-tower' or 'red-tower' or 'blue-tree' or 'red-tree' or 'blue-goose' or 'red-goose' or null
 
 // Drawing State
 let drawingMode = false;
@@ -61,6 +63,8 @@ const addBlueTowerBtn = document.getElementById('addBlueTowerBtn');
 const addRedTowerBtn = document.getElementById('addRedTowerBtn');
 const addBlueTreeBtn = document.getElementById('addBlueTreeBtn');
 const addRedTreeBtn = document.getElementById('addRedTreeBtn');
+const addBlueGooseBtn = document.getElementById('addBlueGooseBtn');
+const addRedGooseBtn = document.getElementById('addRedGooseBtn');
 const drawBtn = document.getElementById('drawBtn');
 const clearDrawBtn = document.getElementById('clearDrawBtn');
 const undoDrawBtn = document.getElementById('undoDrawBtn');
@@ -322,6 +326,8 @@ function setupEventListeners() {
     addRedTowerBtn.addEventListener('click', toggleRedTowerMode);
     addBlueTreeBtn.addEventListener('click', toggleBlueTreeMode);
     addRedTreeBtn.addEventListener('click', toggleRedTreeMode);
+    addBlueGooseBtn.addEventListener('click', toggleBlueGooseMode);
+    addRedGooseBtn.addEventListener('click', toggleRedGooseMode);
     
     // Drawing buttons
     drawBtn.addEventListener('click', toggleDrawingMode);
@@ -436,6 +442,14 @@ function handleKeyboardShortcut(e) {
             e.preventDefault();
             toggleRedTreeMode();
             break;
+        case '5':
+            e.preventDefault();
+            toggleBlueGooseMode();
+            break;
+        case '6':
+            e.preventDefault();
+            toggleRedGooseMode();
+            break;
         case 'd':
             e.preventDefault();
             toggleDrawingMode();
@@ -466,6 +480,8 @@ function deactivatePlacingMode() {
     addRedTowerBtn.classList.remove('active');
     addBlueTreeBtn.classList.remove('active');
     addRedTreeBtn.classList.remove('active');
+    addBlueGooseBtn.classList.remove('active');
+    addRedGooseBtn.classList.remove('active');
     mapArea.style.cursor = 'default';
 }
 
@@ -883,6 +899,8 @@ function toggleObjectiveMode() {
         addRedTowerBtn.classList.remove('active');
         addBlueTreeBtn.classList.remove('active');
         addRedTreeBtn.classList.remove('active');
+    addBlueGooseBtn.classList.remove('active');
+    addRedGooseBtn.classList.remove('active');
         drawBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode', 'drawing-mode');
         mapArea.classList.add('placing-mode');
@@ -907,6 +925,8 @@ function toggleBossMode() {
         addRedTowerBtn.classList.remove('active');
         addBlueTreeBtn.classList.remove('active');
         addRedTreeBtn.classList.remove('active');
+    addBlueGooseBtn.classList.remove('active');
+    addRedGooseBtn.classList.remove('active');
         drawBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode', 'drawing-mode');
         mapArea.classList.add('placing-mode');
@@ -932,6 +952,8 @@ function toggleBlueTowerMode() {
         addRedTowerBtn.classList.remove('active');
         addBlueTreeBtn.classList.remove('active');
         addRedTreeBtn.classList.remove('active');
+    addBlueGooseBtn.classList.remove('active');
+    addRedGooseBtn.classList.remove('active');
         drawBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode', 'drawing-mode');
         mapArea.classList.add('placing-mode');
@@ -956,6 +978,8 @@ function toggleRedTowerMode() {
         addBlueTowerBtn.classList.remove('active');
         addBlueTreeBtn.classList.remove('active');
         addRedTreeBtn.classList.remove('active');
+    addBlueGooseBtn.classList.remove('active');
+    addRedGooseBtn.classList.remove('active');
         drawBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode', 'drawing-mode');
         mapArea.classList.add('placing-mode');
@@ -980,6 +1004,8 @@ function toggleBlueTreeMode() {
         addBlueTowerBtn.classList.remove('active');
         addRedTowerBtn.classList.remove('active');
         addRedTreeBtn.classList.remove('active');
+    addBlueGooseBtn.classList.remove('active');
+    addRedGooseBtn.classList.remove('active');
         drawBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode', 'drawing-mode');
         mapArea.classList.add('placing-mode');
@@ -993,6 +1019,8 @@ function toggleRedTreeMode() {
         // Deactivate
         placingMode = null;
         addRedTreeBtn.classList.remove('active');
+    addBlueGooseBtn.classList.remove('active');
+    addRedGooseBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode');
     } else {
         // Activate red tree mode
@@ -1036,6 +1064,10 @@ function handleMapClick(e) {
         placeBlueTreeMarker(x, y);
     } else if (placingMode === 'red-tree') {
         placeRedTreeMarker(x, y);
+    } else if (placingMode === 'blue-goose') {
+        placeBlueGooseMarker(x, y);
+    } else if (placingMode === 'red-goose') {
+        placeRedGooseMarker(x, y);
     }
 }
 
@@ -1456,6 +1488,197 @@ function removeRedTreeMarker(treeId) {
 }
 
 // ============================================================================
+
+// ============================================================================
+// GOOSE SYSTEM
+// ============================================================================
+
+// Toggle blue goose placing mode
+function toggleBlueGooseMode() {
+    if (placingMode === 'blue-goose') {
+        placingMode = null;
+        addBlueGooseBtn.classList.remove('active');
+        mapArea.classList.remove('placing-mode');
+    } else {
+        placingMode = 'blue-goose';
+        drawingMode = false;
+        addBlueGooseBtn.classList.add('active');
+        addObjectiveBtn.classList.remove('active');
+        addBossBtn.classList.remove('active');
+        addBlueTowerBtn.classList.remove('active');
+        addRedTowerBtn.classList.remove('active');
+        addBlueTreeBtn.classList.remove('active');
+        addRedTreeBtn.classList.remove('active');
+    addBlueGooseBtn.classList.remove('active');
+    addRedGooseBtn.classList.remove('active');
+        addRedGooseBtn.classList.remove('active');
+        drawBtn.classList.remove('active');
+        mapArea.classList.remove('placing-mode', 'drawing-mode');
+        mapArea.classList.add('placing-mode');
+        drawingCanvas.classList.remove('active');
+    }
+}
+
+// Toggle red goose placing mode
+function toggleRedGooseMode() {
+    if (placingMode === 'red-goose') {
+        placingMode = null;
+        addRedGooseBtn.classList.remove('active');
+        mapArea.classList.remove('placing-mode');
+    } else {
+        placingMode = 'red-goose';
+        drawingMode = false;
+        addRedGooseBtn.classList.add('active');
+        addObjectiveBtn.classList.remove('active');
+        addBossBtn.classList.remove('active');
+        addBlueTowerBtn.classList.remove('active');
+        addRedTowerBtn.classList.remove('active');
+        addBlueTreeBtn.classList.remove('active');
+        addRedTreeBtn.classList.remove('active');
+    addBlueGooseBtn.classList.remove('active');
+    addRedGooseBtn.classList.remove('active');
+        addBlueGooseBtn.classList.remove('active');
+        drawBtn.classList.remove('active');
+        mapArea.classList.remove('placing-mode', 'drawing-mode');
+        mapArea.classList.add('placing-mode');
+        drawingCanvas.classList.remove('active');
+    }
+}
+
+// Place blue goose marker
+function placeBlueGooseMarker(x, y) {
+    const gooseId = `blue-goose-${Date.now()}`;
+    
+    const marker = document.createElement('div');
+    marker.className = 'goose-marker blue-goose';
+    marker.dataset.gooseId = gooseId;
+    marker.dataset.gooseType = 'blue';
+    marker.style.left = `${x - 28}px`;
+    marker.style.top = `${y - 28}px`;
+    marker.draggable = true;
+    
+    marker.innerHTML = `
+        <img src="images/goose_blue.png" alt="Blue Goose" draggable="false">
+        <button class="remove-btn" onclick="removeBlueGooseMarker('${gooseId}')">×</button>
+    `;
+    
+    marker.addEventListener('dragstart', handleBlueGooseDragStart);
+    marker.addEventListener('dragend', handleBlueGooseDragEnd);
+    
+    mapArea.appendChild(marker);
+    
+    placedBlueGeese.push({
+        id: gooseId,
+        x: x,
+        y: y
+    });
+    
+    savePositions();
+    updatePlaceholder();
+}
+
+function handleBlueGooseDragStart(e) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', e.currentTarget.dataset.gooseId);
+    e.dataTransfer.setData('type', 'blue-goose-marker');
+    e.currentTarget.style.opacity = '0.5';
+}
+
+function handleBlueGooseDragEnd(e) {
+    e.currentTarget.style.opacity = '1';
+    
+    const gooseId = e.currentTarget.dataset.gooseId;
+    const rect = mapArea.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const goose = placedBlueGeese.find(g => g.id === gooseId);
+    if (goose) {
+        goose.x = x;
+        goose.y = y;
+        e.currentTarget.style.left = `${x - 28}px`;
+        e.currentTarget.style.top = `${y - 28}px`;
+        savePositions();
+    }
+}
+
+function removeBlueGooseMarker(gooseId) {
+    const marker = mapArea.querySelector(`[data-goose-id="${gooseId}"]`);
+    if (marker) {
+        marker.remove();
+    }
+    placedBlueGeese = placedBlueGeese.filter(g => g.id !== gooseId);
+    savePositions();
+    updatePlaceholder();
+}
+
+// Place red goose marker
+function placeRedGooseMarker(x, y) {
+    const gooseId = `red-goose-${Date.now()}`;
+    
+    const marker = document.createElement('div');
+    marker.className = 'goose-marker red-goose';
+    marker.dataset.gooseId = gooseId;
+    marker.dataset.gooseType = 'red';
+    marker.style.left = `${x - 28}px`;
+    marker.style.top = `${y - 28}px`;
+    marker.draggable = true;
+    
+    marker.innerHTML = `
+        <img src="images/goose_red.png" alt="Red Goose" draggable="false">
+        <button class="remove-btn" onclick="removeRedGooseMarker('${gooseId}')">×</button>
+    `;
+    
+    marker.addEventListener('dragstart', handleRedGooseDragStart);
+    marker.addEventListener('dragend', handleRedGooseDragEnd);
+    
+    mapArea.appendChild(marker);
+    
+    placedRedGeese.push({
+        id: gooseId,
+        x: x,
+        y: y
+    });
+    
+    savePositions();
+    updatePlaceholder();
+}
+
+function handleRedGooseDragStart(e) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', e.currentTarget.dataset.gooseId);
+    e.dataTransfer.setData('type', 'red-goose-marker');
+    e.currentTarget.style.opacity = '0.5';
+}
+
+function handleRedGooseDragEnd(e) {
+    e.currentTarget.style.opacity = '1';
+    
+    const gooseId = e.currentTarget.dataset.gooseId;
+    const rect = mapArea.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const goose = placedRedGeese.find(g => g.id === gooseId);
+    if (goose) {
+        goose.x = x;
+        goose.y = y;
+        e.currentTarget.style.left = `${x - 28}px`;
+        e.currentTarget.style.top = `${y - 28}px`;
+        savePositions();
+    }
+}
+
+function removeRedGooseMarker(gooseId) {
+    const marker = mapArea.querySelector(`[data-goose-id="${gooseId}"]`);
+    if (marker) {
+        marker.remove();
+    }
+    placedRedGeese = placedRedGeese.filter(g => g.id !== gooseId);
+    savePositions();
+    updatePlaceholder();
+}
+
 // ENEMY SYSTEM
 // ============================================================================
 
@@ -1786,6 +2009,8 @@ function toggleDrawingMode() {
         addRedTowerBtn.classList.remove('active');
         addBlueTreeBtn.classList.remove('active');
         addRedTreeBtn.classList.remove('active');
+    addBlueGooseBtn.classList.remove('active');
+    addRedGooseBtn.classList.remove('active');
         mapArea.classList.remove('placing-mode');
         mapArea.classList.add('drawing-mode');
         drawingCanvas.classList.add('active');
@@ -2207,7 +2432,7 @@ function applyFilters(searchTerm = '') {
 // Clear all placements
 async function clearAllPlacements() {
     const totalPlaced = getTotalPlacedPlayers();
-    const totalMarkers = placedObjectives.length + placedBosses.length + placedBlueTowers.length + placedRedTowers.length + placedBlueTrees.length + placedRedTrees.length + placedEnemies.length;
+    const totalMarkers = placedObjectives.length + placedBosses.length + placedBlueTowers.length + placedRedTowers.length + placedBlueTrees.length + placedRedTrees.length + placedBlueGeese.length + placedRedGeese.length + placedEnemies.length;
     if (totalPlaced === 0 && totalMarkers === 0) return;
     
     const confirmed = await showConfirm(
@@ -2226,6 +2451,8 @@ async function clearAllPlacements() {
         placedRedTowers = [];
         placedBlueTrees = [];
         placedRedTrees = [];
+        placedBlueGeese = [];
+        placedRedGeese = [];
         placedEnemies = [];
         savePositions();
         updateCounts();
@@ -2248,7 +2475,7 @@ function updatePlaceholder() {
     if (placeholder) {
         const hasContent = placedMembers.length > 0 || placedGroups.length > 0 || 
                           placedObjectives.length > 0 || placedBosses.length > 0 ||
-                          placedBlueTowers.length > 0 || placedRedTowers.length > 0 || placedBlueTrees.length > 0 || placedRedTrees.length > 0 || placedEnemies.length > 0;
+                          placedBlueTowers.length > 0 || placedRedTowers.length > 0 || placedBlueTrees.length > 0 || placedRedTrees.length > 0 || placedBlueGeese.length > 0 || placedRedGeese.length > 0 || placedEnemies.length > 0;
         placeholder.style.display = hasContent ? 'none' : 'block';
     }
 }
@@ -2503,6 +2730,84 @@ function renderMap() {
         mapArea.appendChild(marker);
     });
     
+    
+    // Render blue geese
+    placedBlueGeese.forEach(goose => {
+        const marker = document.createElement('div');
+        marker.className = 'goose-marker blue-goose';
+        marker.dataset.gooseId = goose.id;
+        marker.dataset.gooseType = 'blue';
+        marker.style.left = `${goose.x - 28}px`;
+        marker.style.top = `${goose.y - 28}px`;
+        marker.draggable = true;
+        marker.innerHTML = `
+            <img src="images/goose_blue.png" alt="Blue Goose" draggable="false">
+            <button class="remove-btn" onclick="removeBlueGooseMarker('${goose.id}')">×</button>
+        `;
+        
+        marker.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', goose.id);
+            e.dataTransfer.setData('type', 'blue-goose-marker');
+            e.currentTarget.style.opacity = '0.5';
+        });
+        
+        marker.addEventListener('dragend', (e) => {
+            e.currentTarget.style.opacity = '1';
+            const rect = mapArea.getBoundingClientRect();
+            const x = e.clientX - rect.left + 28;
+            const y = e.clientY - rect.top + 28;
+            const gooseIndex = placedBlueGeese.findIndex(g => g.id === goose.id);
+            if (gooseIndex !== -1) {
+                placedBlueGeese[gooseIndex].x = x;
+                placedBlueGeese[gooseIndex].y = y;
+                marker.style.left = `${x - 28}px`;
+                marker.style.top = `${y - 28}px`;
+                savePositions();
+            }
+        });
+        
+        mapArea.appendChild(marker);
+    });
+    
+    // Render red geese
+    placedRedGeese.forEach(goose => {
+        const marker = document.createElement('div');
+        marker.className = 'goose-marker red-goose';
+        marker.dataset.gooseId = goose.id;
+        marker.dataset.gooseType = 'red';
+        marker.style.left = `${goose.x - 28}px`;
+        marker.style.top = `${goose.y - 28}px`;
+        marker.draggable = true;
+        marker.innerHTML = `
+            <img src="images/goose_red.png" alt="Red Goose" draggable="false">
+            <button class="remove-btn" onclick="removeRedGooseMarker('${goose.id}')">×</button>
+        `;
+        
+        marker.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', goose.id);
+            e.dataTransfer.setData('type', 'red-goose-marker');
+            e.currentTarget.style.opacity = '0.5';
+        });
+        
+        marker.addEventListener('dragend', (e) => {
+            e.currentTarget.style.opacity = '1';
+            const rect = mapArea.getBoundingClientRect();
+            const x = e.clientX - rect.left + 28;
+            const y = e.clientY - rect.top + 28;
+            const gooseIndex = placedRedGeese.findIndex(g => g.id === goose.id);
+            if (gooseIndex !== -1) {
+                placedRedGeese[gooseIndex].x = x;
+                placedRedGeese[gooseIndex].y = y;
+                marker.style.left = `${x - 28}px`;
+                marker.style.top = `${y - 28}px`;
+                savePositions();
+            }
+        });
+        
+        mapArea.appendChild(marker);
+    });
     // Render enemies
     placedEnemies.forEach(enemy => {
         const marker = document.createElement('div');
@@ -2603,10 +2908,20 @@ function exportPositions() {
                     x: Math.round(tree.x),
                     y: Math.round(tree.y)
                 })),
-                redTrees: placedRedTrees.map(tree => ({
+                                redTrees: placedRedTrees.map(tree => ({
                     id: tree.id,
                     x: Math.round(tree.x),
                     y: Math.round(tree.y)
+                })),
+                blueGeese: placedBlueGeese.map(goose => ({
+                    id: goose.id,
+                    x: Math.round(goose.x),
+                    y: Math.round(goose.y)
+                })),
+                redGeese: placedRedGeese.map(goose => ({
+                    id: goose.id,
+                    x: Math.round(goose.x),
+                    y: Math.round(goose.y)
                 })),
                 enemies: placedEnemies.map(enemy => ({
                     id: enemy.id,
@@ -2715,6 +3030,8 @@ function handleImportFile(event) {
             placedRedTowers = [];
             placedBlueTrees = [];
             placedRedTrees = [];
+        placedBlueGeese = [];
+        placedRedGeese = [];
             placedEnemies = [];
             enemiesCount = 0;
             
@@ -2914,6 +3231,8 @@ function savePositions() {
         redTowers: placedRedTowers,
         blueTrees: placedBlueTrees,
         redTrees: placedRedTrees,
+        blueGeese: placedBlueGeese,
+        redGeese: placedRedGeese,
         enemies: placedEnemies
     };
     localStorage.setItem('vcross-gvg-positions', JSON.stringify(data));
@@ -3018,6 +3337,19 @@ function loadSavedPositions() {
                 if (data.trees && !data.blueTrees && !data.redTrees) {
                     data.trees.forEach(tree => {
                         placeBlueTreeMarker(tree.x, tree.y);
+                    });                }
+                
+                // Load blue geese
+                if (data.blueGeese) {
+                    data.blueGeese.forEach(goose => {
+                        placeBlueGooseMarker(goose.x, goose.y);
+                    });
+                }
+                
+                // Load red geese
+                if (data.redGeese) {
+                    data.redGeese.forEach(goose => {
+                        placeRedGooseMarker(goose.x, goose.y);
                     });
                 }
                 
