@@ -407,9 +407,6 @@ function createMemberElement(member) {
 
 // Setup event listeners
 function setupEventListeners() {
-    // Panel toggle button
-    const togglePanelBtn = document.getElementById('togglePanelBtn');
-    togglePanelBtn.addEventListener('click', togglePanel);
     
     // Menu dropdown toggle
     const menuBtn = document.getElementById('menuBtn');
@@ -860,10 +857,13 @@ function updateGroupMarker(marker, group) {
     const roleCount = countRoles(group.memberIds);
     const groupMembers = group.memberIds.map(id => members.find(m => m.id === id)).filter(m => m);
     
+    // Get display names for teams
+    const displayTeamNames = group.teams.map(teamName => getTeamDisplayName(teamName)).join(', ');
+    
     marker.innerHTML = `
         <div class="group-number">${group.memberIds.length}</div>
         <div class="group-tooltip">
-            <div class="tooltip-header">Group: ${group.teams.join(', ')}</div>
+            <div class="tooltip-header">Group: ${displayTeamNames}</div>
             <div class="tooltip-roles">
                 ${roleCount.Tank > 0 ? `<div class="role-item"><span class="role-dot role-Tank"></span> ${roleCount.Tank} Tank</div>` : ''}
                 ${roleCount.DPS > 0 ? `<div class="role-item"><span class="role-dot role-DPS"></span> ${roleCount.DPS} DPS</div>` : ''}
@@ -2453,9 +2453,11 @@ function placeMemberOnMap(member, x, y) {
     marker.style.top = `${y - 8}px`;
     marker.draggable = true;
     
+    const displayTeamName = getTeamDisplayName(member.team);
+    
     marker.innerHTML = `
         <div class="marker-tooltip">
-            <div class="tooltip-info">${member.role} | ${member.team}</div>
+            <div class="tooltip-info">${member.role} | ${displayTeamName}</div>
             <div class="tooltip-weapons">⚔️ ${member.weapon1 || 'N/A'} | ${member.weapon2 || 'N/A'}</div>
         </div>
         <button class="remove-btn" onclick="removeMemberMarker(${member.id})">×</button>
@@ -3067,7 +3069,9 @@ function exportPositions() {
                     points: path.points,
                     color: path.color || '#ff0000',
                     width: path.width || 3
-                }))
+                })),
+                // Export team name mappings (custom renamed teams)
+                teamNames: teamNameMappings
             };
             
             const dataStr = JSON.stringify(exportData, null, 2);
@@ -3152,7 +3156,7 @@ function handleImportFile(event) {
             }
             
             // Clear current placements without confirmation
-            const markers = mapArea.querySelectorAll('.member-marker, .group-marker, .objective-marker, .boss-marker, .tower-marker, .tree-marker, .enemy-marker');
+            const markers = mapArea.querySelectorAll('.member-marker, .group-marker, .objective-marker, .boss-marker, .tower-marker, .tree-marker, .goose-marker, .enemy-marker');
             markers.forEach(marker => marker.remove());
             placedMembers = [];
             placedGroups = [];
@@ -3162,8 +3166,8 @@ function handleImportFile(event) {
             placedRedTowers = [];
             placedBlueTrees = [];
             placedRedTrees = [];
-        placedBlueGeese = [];
-        placedRedGeese = [];
+            placedBlueGeese = [];
+            placedRedGeese = [];
             placedEnemies = [];
             enemiesCount = 0;
             
@@ -3286,6 +3290,28 @@ function handleImportFile(event) {
                 });
             }
             
+            // Import blue geese
+            if (importData.blueGeese && Array.isArray(importData.blueGeese)) {
+                importData.blueGeese.forEach(goose => {
+                    placedBlueGeese.push({
+                        id: goose.id,
+                        x: goose.x,
+                        y: goose.y
+                    });
+                });
+            }
+            
+            // Import red geese
+            if (importData.redGeese && Array.isArray(importData.redGeese)) {
+                importData.redGeese.forEach(goose => {
+                    placedRedGeese.push({
+                        id: goose.id,
+                        x: goose.x,
+                        y: goose.y
+                    });
+                });
+            }
+            
             // Import enemies
             if (importData.enemies && Array.isArray(importData.enemies)) {
                 importData.enemies.forEach(enemy => {
@@ -3331,6 +3357,12 @@ function handleImportFile(event) {
                 
                 // Redraw canvas with imported drawings
                 redrawAllPaths();
+            }
+            
+            // Import team name mappings (custom renamed teams)
+            if (importData.teamNames && typeof importData.teamNames === 'object') {
+                teamNameMappings = { ...importData.teamNames };
+                saveTeamNames();
             }
             
             // Update display
@@ -3588,6 +3620,15 @@ function openPlayerEditModal(playerId = null) {
     const editPlayerWeapon1 = document.getElementById('editPlayerWeapon1');
     const editPlayerWeapon2 = document.getElementById('editPlayerWeapon2');
     
+    // Populate team dropdown dynamically with current team names (including renamed ones)
+    editPlayerTeam.innerHTML = '';
+    TEAM_ORDER.forEach(teamName => {
+        const option = document.createElement('option');
+        option.value = teamName;
+        option.textContent = getTeamDisplayName(teamName);
+        editPlayerTeam.appendChild(option);
+    });
+    
     if (playerId) {
         // Edit existing player
         const player = members.find(m => m.id === playerId);
@@ -3606,7 +3647,7 @@ function openPlayerEditModal(playerId = null) {
         editPlayerId.value = '';
         editPlayerName.value = '';
         editPlayerRole.value = 'DPS';
-        editPlayerTeam.value = 'FrontLine';
+        editPlayerTeam.value = 'Team 1';
         editPlayerWeapon1.value = 'Nameless Sword';
         editPlayerWeapon2.value = 'Nameless Spear';
     }
@@ -3783,7 +3824,8 @@ function updatePlacedPlayerInfo(playerId) {
             marker.className = `member-marker role-${member.role}`;
             const tooltip = marker.querySelector('.marker-tooltip .tooltip-info');
             if (tooltip) {
-                tooltip.textContent = `${member.role} | ${member.team}`;
+                const displayTeamName = getTeamDisplayName(member.team);
+                tooltip.textContent = `${member.role} | ${displayTeamName}`;
             }
             const weaponsTooltip = marker.querySelector('.marker-tooltip .tooltip-weapons');
             if (weaponsTooltip) {
@@ -3814,14 +3856,6 @@ function updatePlacedPlayerInfo(playerId) {
 // ============================================================================
 
 // Panel toggle functionality
-function togglePanel() {
-    const memberPanel = document.getElementById('memberPanel');
-    const mainContent = document.querySelector('.main-content');
-    
-    memberPanel.classList.toggle('collapsed');
-    mainContent.classList.toggle('panel-collapsed');
-}
-
 function savePlayersToStorage() {
     localStorage.setItem('vcross-gvg-players', JSON.stringify(members));
 }
@@ -3839,10 +3873,19 @@ function migrateTeamNames(members) {
     };
     
     return members.map(member => {
+        let updatedMember = { ...member };
+        
+        // Migrate team names
         if (teamNameMap[member.team]) {
-            return { ...member, team: teamNameMap[member.team] };
+            updatedMember.team = teamNameMap[member.team];
         }
-        return member;
+        
+        // Migrate Support role to DPS
+        if (member.role === 'Support') {
+            updatedMember.role = 'DPS';
+        }
+        
+        return updatedMember;
     });
 }
 function loadPlayersFromStorage() {

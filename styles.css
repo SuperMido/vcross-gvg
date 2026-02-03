@@ -86,51 +86,6 @@ header h1 {
     transition: all 0.3s ease;
 }
 
-.member-panel.collapsed {
-    padding: 10px;
-}
-
-.member-panel.collapsed .panel-content {
-    opacity: 0;
-    visibility: hidden;
-    width: 0;
-    overflow: hidden;
-}
-
-.panel-toggle-btn {
-    position: absolute;
-    right: -15px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 30px;
-    height: 60px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    border-radius: 0 8px 8px 0;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 16px;
-    z-index: 10;
-    box-shadow: 2px 0 8px rgba(0,0,0,0.2);
-    transition: all 0.3s ease;
-}
-
-.panel-toggle-btn:hover {
-    background: linear-gradient(135deg, #5568d3 0%, #653a8e 100%);
-    transform: translateY(-50%) translateX(2px);
-}
-
-.panel-toggle-btn .toggle-icon {
-    transition: transform 0.3s ease;
-}
-
-.member-panel.collapsed .panel-toggle-btn .toggle-icon {
-    transform: rotate(180deg);
-}
-
 .panel-content {
     display: flex;
     flex-direction: column;
@@ -2390,10 +2345,6 @@ body.dark-theme .add-enemies-btn {
 
 body.dark-theme .add-enemies-btn:hover {
     background: #e74c3c;
-}
-
-body.dark-theme .panel-toggle-btn {
-    background: linear-gradient(135deg, #533483 0%, #e94560 100%);
 }
 
 body.dark-theme .sidebar-toolbar {

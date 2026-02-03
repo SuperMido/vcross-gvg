@@ -32,9 +32,6 @@
         <div class="main-content">
             <!-- Member List Panel -->
             <div class="member-panel" id="memberPanel">
-                <button class="panel-toggle-btn" id="togglePanelBtn" title="Toggle Panel">
-                    <span class="toggle-icon">◀</span>
-                </button>
                 <div class="panel-content">
                     <h2>Guild Members <span id="playerCount">(0/30)</span>
                         <button id="managePlayersBtn" class="manage-players-btn" title="Manage Players">⚙️</button>
@@ -56,7 +53,6 @@
                     <button class="role-filter-btn" data-role="Tank">Tank</button>
                     <button class="role-filter-btn" data-role="DPS">DPS</button>
                     <button class="role-filter-btn" data-role="Healer">Healer</button>
-                    <button class="role-filter-btn" data-role="Support">Support</button>
                 </div>
                     <div id="memberList" class="member-list"></div>
                 </div>
@@ -178,18 +174,17 @@
                             <option value="Tank">Tank</option>
                             <option value="DPS">DPS</option>
                             <option value="Healer">Healer</option>
-                            <option value="Support">Support</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="editPlayerTeam">Team:</label>
                         <select id="editPlayerTeam" required>
-                            <option value="FrontLine">FrontLine</option>
-                            <option value="Jungle">Jungle</option>
-                            <option value="Defence 1">Defence 1</option>
-                            <option value="Defence 2">Defence 2</option>
-                            <option value="Backline 1">Backline 1</option>
-                            <option value="Backline 2">Backline 2</option>
+                            <option value="Team 1">Team 1</option>
+                            <option value="Team 2">Team 2</option>
+                            <option value="Team 3">Team 3</option>
+                            <option value="Team 4">Team 4</option>
+                            <option value="Team 5">Team 5</option>
+                            <option value="Team 6">Team 6</option>
                         </select>
                     </div>
                     <div class="form-group">
