@@ -40,7 +40,77 @@ const MAX_ENEMIES = 30;
 const ENEMIES_PER_CLICK = 5;
 const GROUP_MERGE_DISTANCE = 80;
 const AUTO_DELETE_DELAY = 10000;
-const TEAM_ORDER = ['FrontLine', 'Jungle', 'Defence 1', 'Defence 2', 'Backline 1', 'Backline 2'];
+const TEAM_ORDER = ['Team 1', 'Team 2', 'Team 3', 'Team 4', 'Team 5', 'Team 6'];
+// Add after TEAM_ORDER constant
+
+// Custom team name mappings
+let teamNameMappings = {};
+
+// Load custom team names from localStorage
+function loadTeamNames() {
+    const saved = localStorage.getItem('vcross-gvg-team-names');
+    if (saved) {
+        try {
+            let mappings = JSON.parse(saved);
+            // Migrate old team names in mappings
+            const migrationMap = {
+                'FrontLine': 'Team 1',
+                'Jungle': 'Team 2',
+                'Defence 1': 'Team 3',
+                'Defence 2': 'Team 4',
+                'Backline 1': 'Team 5',
+                'Backline 2': 'Team 6'
+            };
+            
+            // Convert old keys to new keys
+            const newMappings = {};
+            for (const [oldKey, value] of Object.entries(mappings)) {
+                const newKey = migrationMap[oldKey] || oldKey;
+                newMappings[newKey] = value;
+            }
+            
+            teamNameMappings = newMappings;
+            // Save migrated mappings
+            if (Object.keys(migrationMap).some(old => old in mappings)) {
+                saveTeamNames();
+            }
+        } catch (e) {
+            console.error('Error loading team names:', e);
+            teamNameMappings = {};
+        }
+    }
+}
+
+// Save team names to localStorage
+function saveTeamNames() {
+    localStorage.setItem('vcross-gvg-team-names', JSON.stringify(teamNameMappings));
+}
+
+// Get display name for team (custom or default)
+function getTeamDisplayName(teamName) {
+    return teamNameMappings[teamName] || teamName;
+}
+
+// Rename team
+async function renameTeam(teamName) {
+    const currentName = getTeamDisplayName(teamName);
+    const newName = await showPrompt(
+        'Rename Team',
+        `Enter new name for "${currentName}":`,
+        currentName
+    );
+    
+    if (newName !== null && newName !== '') {
+        if (newName === teamName) {
+            // Reset to default
+            delete teamNameMappings[teamName];
+        } else {
+            teamNameMappings[teamName] = newName;
+        }
+        saveTeamNames();
+        renderMemberList();
+    }
+}
 
 // ============================================================================
 // DOM ELEMENT REFERENCES
@@ -90,6 +160,12 @@ const confirmModalTitle = document.getElementById('confirmModalTitle');
 const confirmModalMessage = document.getElementById('confirmModalMessage');
 const confirmOkBtn = document.getElementById('confirmOkBtn');
 const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+const promptModal = document.getElementById('promptModal');
+const promptModalTitle = document.getElementById('promptModalTitle');
+const promptModalMessage = document.getElementById('promptModalMessage');
+const promptModalInput = document.getElementById('promptModalInput');
+const promptOkBtn = document.getElementById('promptOkBtn');
+const promptCancelBtn = document.getElementById('promptCancelBtn');
 const hotkeyHelpModal = document.getElementById('hotkeyHelpModal');
 const closeHotkeyModalBtn = document.getElementById('closeHotkeyModalBtn');
 
@@ -124,12 +200,58 @@ function showConfirm(title, message) {
     });
 }
 
+function showPrompt(title, message, defaultValue = '') {
+    return new Promise((resolve) => {
+        promptModalTitle.textContent = title;
+        promptModalMessage.textContent = message;
+        promptModalInput.value = defaultValue;
+        promptModal.style.display = 'flex';
+        
+        // Focus and select the input
+        setTimeout(() => {
+            promptModalInput.focus();
+            promptModalInput.select();
+        }, 100);
+        
+        const handleOk = () => {
+            const value = promptModalInput.value.trim();
+            cleanup();
+            resolve(value || null);
+        };
+        
+        const handleCancel = () => {
+            cleanup();
+            resolve(null);
+        };
+        
+        const handleEnter = (e) => {
+            if (e.key === 'Enter') {
+                handleOk();
+            } else if (e.key === 'Escape') {
+                handleCancel();
+            }
+        };
+        
+        const cleanup = () => {
+            promptModal.style.display = 'none';
+            promptOkBtn.removeEventListener('click', handleOk);
+            promptCancelBtn.removeEventListener('click', handleCancel);
+            promptModalInput.removeEventListener('keydown', handleEnter);
+        };
+        
+        promptOkBtn.addEventListener('click', handleOk);
+        promptCancelBtn.addEventListener('click', handleCancel);
+        promptModalInput.addEventListener('keydown', handleEnter);
+    });
+}
+
 // ============================================================================
 // INITIALIZATION
 // ============================================================================
 
 function init() {
     loadPlayersFromStorage();
+    loadTeamNames();
     loadThemePreference();
     renderMemberList();
     setupEventListeners();
@@ -189,12 +311,17 @@ function renderGroupedView() {
             headerDiv.className = 'team-group-header';
             headerDiv.draggable = true;
             headerDiv.dataset.teamName = teamName;
+            const displayName = getTeamDisplayName(teamName);
             headerDiv.innerHTML = `
-                <span><span class="toggle-icon">▼</span> ${teamName}</span>
+                <span class="team-name-wrapper">
+                    <span class="toggle-icon">▼</span> 
+                    <span class="team-name">${displayName}</span>
+                    <button class="rename-team-btn" onclick="renameTeam('${teamName}')" title="Rename team">✏️</button>
+                </span>
                 <span class="team-count">${teamMembers.length}</span>
             `;
             headerDiv.addEventListener('click', (e) => {
-                if (e.target === headerDiv || e.target.closest('.toggle-icon')) {
+                if (e.target === headerDiv || e.target.closest('.toggle-icon') || e.target.closest('.team-name')) {
                     toggleTeamGroup(groupDiv);
                 }
             });
@@ -2018,10 +2145,15 @@ function toggleDrawingMode() {
 }
 
 // Clear all drawings
-function clearAllDrawings() {
+async function clearAllDrawings() {
     if (drawingPaths.length === 0) return;
     
-    if (confirm('Are you sure you want to clear all drawings?')) {
+    const confirmed = await showConfirm(
+        'Clear All Drawings',
+        'Are you sure you want to clear all drawings?'
+    );
+    
+    if (confirmed) {
         // Save current state to history before clearing (deep copy)
         if (!autoDeleteDrawings && drawingPaths.length > 0) {
             const stateCopy = drawingPaths.map(path => ({
@@ -2441,7 +2573,7 @@ async function clearAllPlacements() {
     );
     
     if (confirmed) {
-        const markers = mapArea.querySelectorAll('.member-marker, .group-marker, .objective-marker, .boss-marker, .tower-marker, .tree-marker');
+        const markers = mapArea.querySelectorAll('.member-marker, .group-marker, .objective-marker, .boss-marker, .tower-marker, .tree-marker, .goose-marker, .enemy-marker');
         markers.forEach(marker => marker.remove());
         placedMembers = [];
         placedGroups = [];
@@ -3694,13 +3826,36 @@ function savePlayersToStorage() {
     localStorage.setItem('vcross-gvg-players', JSON.stringify(members));
 }
 
+
+// Migrate old team names to new team names
+function migrateTeamNames(members) {
+    const teamNameMap = {
+        'FrontLine': 'Team 1',
+        'Jungle': 'Team 2',
+        'Defence 1': 'Team 3',
+        'Defence 2': 'Team 4',
+        'Backline 1': 'Team 5',
+        'Backline 2': 'Team 6'
+    };
+    
+    return members.map(member => {
+        if (teamNameMap[member.team]) {
+            return { ...member, team: teamNameMap[member.team] };
+        }
+        return member;
+    });
+}
 function loadPlayersFromStorage() {
     const saved = localStorage.getItem('vcross-gvg-players');
     if (saved) {
         try {
-            const loadedMembers = JSON.parse(saved);
+            let loadedMembers = JSON.parse(saved);
             if (Array.isArray(loadedMembers) && loadedMembers.length > 0) {
+                // Migrate old team names to new team names
+                loadedMembers = migrateTeamNames(loadedMembers);
                 members = loadedMembers;
+                // Save the migrated data back to storage
+                savePlayersToStorage();
             }
         } catch (e) {
             console.error('Error loading players:', e);

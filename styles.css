@@ -2813,3 +2813,51 @@ body.dark-theme .hotkey-desc {
     background: #ff3838;
     transform: scale(1.1);
 }
+
+/* Team Rename Button */
+.team-name-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rename-team-btn {
+    opacity: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.rename-team-btn:hover {
+    background: rgba(102, 126, 234, 0.1);
+    transform: scale(1.1);
+}
+
+.team-group-header:hover .rename-team-btn {
+    opacity: 1;
+}
+
+.team-name {
+    flex: 1;
+}
+
+/* Prompt Modal Input */
+.prompt-input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    margin-top: 10px;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.prompt-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
